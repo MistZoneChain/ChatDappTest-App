@@ -2,50 +2,49 @@
   <div class="tool">
     <div class="tool-avatar">
       <div class="tool-avatar-img" @click="showUserModal = true">
-        <img v-if="load.avatars[user.address]" :src="load.avatars[user.address]" alt="" />
+        <img v-if="appSync.addressAvatarMap[appSync.userAddress]" :src="appSync.addressAvatarMap[appSync.userAddress]" alt="" />
       </div>
-      <div class="tool-avatar-name">{{ user.address }}</div>
+      <div class="tool-avatar-name">{{ appSync.userAddress }}</div>
     </div>
 
-    <myIcon type="iconzhongchou1" class="icon tool-zhongchou" @click="showCrowdFundingModal = true" />
-    <myIcon type="iconchanzi" class="icon tool-shovel" @click="showShovelModal = true" />
+    <myIcon type="language" class="icon tool-language" @click="$i18n.locale == 'cn' ? ($i18n.locale = 'en') : ($i18n.locale = 'cn')" />
     <a-icon type="skin" class="tool-skin icon" @click="showBackgroundModal = true" />
-    <a href="https://coiner.chat" target="_blank" class="tool-home icon"><a-icon type="home"/></a>
+    <a href="https://chatdao.org" target="_blank" class="tool-home icon"><a-icon type="home"/></a>
 
-    <a-modal title="用户信息" :visible="showUserModal" footer="" @cancel="showUserModal = false">
+    <a-modal :title="$t('tool.user_info')" :visible="showUserModal" footer="" @cancel="showUserModal = false">
       <div class="tool-user">
-        <div class="tool-user-avatar" v-if="load.avatars[user.address]">
-          <a-avatar :src="load.avatars[user.address]" class="img" :size="120"></a-avatar>
+        <div class="tool-user-avatar" v-if="appSync.addressAvatarMap[appSync.userAddress]">
+          <a-avatar :src="appSync.addressAvatarMap[appSync.userAddress]" class="img" :size="120"></a-avatar>
         </div>
         <div class="tool-user-info">
-          <div class="tool-user-title">用户地址</div>
-          <div class="tool-user-input">{{ user.address }}</div>
+          <div class="tool-user-title">{{ $t('tool.user_address') }}</div>
+          <div class="tool-user-input">{{ appSync.userAddress }}</div>
         </div>
       </div>
     </a-modal>
 
-    <my-crowd-fund :showModal="showCrowdFundingModal" @cancel="showCrowdFundingModal = false"> </my-crowd-fund>
-
-    <my-mining :showModal="showShovelModal" @cancel="showShovelModal = false"> </my-mining>
-
-    <a-modal title="主题" :visible="showBackgroundModal" footer="" @cancel="showBackgroundModal = false">
+    <a-modal :title="$t('tool.theme')" :visible="showBackgroundModal" footer="" @cancel="showBackgroundModal = false">
       <div class="tool-user-info">
         <div class="tool-user-title" style="width: 65px">
-          <span>背景图</span>
+          <span>{{ $t('tool.background_image') }}</span>
           <a-tooltip placement="topLeft" arrow-point-at-center>
             <div slot="title">
-              <span>输入空格时为默认背景, 支持 jpg, png, gif等格式</span>
+              <span>{{ $t('tool.support_jpg_png_gif_and_other_formats') }}</span>
             </div>
             <a-icon type="exclamation-circle" style="margin-left: 5px" />
           </a-tooltip>
         </div>
-        <a-input v-model="backgroundInput" class="tool-user-input" placeholder="请输入背景图片网址"></a-input>
-        <a-button type="primary" @click="changeBackground">确认</a-button>
+        <a-input
+          v-model="backgroundInput"
+          class="tool-user-input"
+          :placeholder="$t('tool.please_enter_the_background_image_url')"
+        ></a-input>
+        <a-button type="primary" @click="changeBackground(backgroundInput)">{{ $t('tool.confirm') }}</a-button>
       </div>
       <div class="tool-recommend">
-        <div class="recommend" @click="user.background = item.url" v-for="(item, index) in CONST.BACKGROUND" :key="index">
-          <img :src="item.url" alt="" />
-          <span class="text">{{ item.text }}</span>
+        <div class="recommend" @click="changeBackground(background.url)" v-for="(background, index) in common.backgrounds" :key="index">
+          <img :src="background.url" alt="" />
+          <span class="text">{{ background.text }}</span>
         </div>
       </div>
     </a-modal>
@@ -55,39 +54,29 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
-import MyMining from '@/components/Mining.vue';
-import MyCrowdFund from '@/components/CrowdFund.vue';
-import * as COMMON from '@/const/common';
-import * as CONST from '@/const/const';
+import { common } from '@/const';
+import { AppStorage, AppSync } from '@/store';
 
 const appModule = namespace('app');
 
-@Component({
-  components: {
-    MyMining,
-    MyCrowdFund,
-  },
-})
-export default class GenalTool extends Vue {
-  @appModule.State('user') user: any;
-  @appModule.State('load') load: any;
-
-  COMMON: any = COMMON;
-  CONST: any = CONST;
+@Component({})
+export default class MyTool extends Vue {
+  @appModule.State('storage') appStorage: AppStorage;
+  @appModule.State('sync') appSync: AppSync;
 
   showUserModal: boolean = false;
   showBackgroundModal: boolean = false;
   showShovelModal: boolean = false;
   showCrowdFundingModal: boolean = false;
+
   backgroundInput: string = '';
+  common = common;
 
-  async created() {}
+  created() {}
 
-  changeBackground() {
-    if (!this.backgroundInput.trim().length) {
-      this.user.background = this.user.backgrounds[0].url;
-    } else {
-      this.user.background = this.backgroundInput;
+  changeBackground(background: string) {
+    if (background.trim().length) {
+      this.appStorage.background = background;
     }
     this.showBackgroundModal = false;
   }
@@ -98,6 +87,7 @@ export default class GenalTool extends Vue {
   padding: 10px 5px;
   height: 98%;
   position: relative;
+  color: rgba(255, 255, 255, 0.85);
   .tool-avatar {
     margin-top: 3px;
     .tool-avatar-img {
@@ -125,7 +115,7 @@ export default class GenalTool extends Vue {
     font-size: 30px;
     bottom: 190px;
   }
-  .tool-shovel {
+  .tool-language {
     font-size: 30px;
     bottom: 130px;
   }
@@ -150,7 +140,6 @@ export default class GenalTool extends Vue {
     }
   }
 }
-
 .tool-user {
   text-align: center;
   font-size: 16px;
@@ -215,7 +204,6 @@ export default class GenalTool extends Vue {
     margin-bottom: 15px;
   }
 }
-
 .tool-recommend {
   display: flex;
   justify-content: center;
@@ -252,7 +240,6 @@ export default class GenalTool extends Vue {
     }
   }
 }
-
 @media screen and (max-width: 788px) {
   .tool-recommend {
     font-size: 12px;

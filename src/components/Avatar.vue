@@ -7,11 +7,11 @@
 
 <template>
   <div class="avatar">
-    <a-popover trigger="click">
+    <a-popover>
       <div slot="content" class="avatar-card" v-if="canCheck">
         <a-avatar :size="60" :src="avatar" />
         <div>{{ showName }}</div>
-        <a-button @click="$emit('goTo')" type="primary" :disabled="disabled">在区块链浏览器上查看</a-button>
+        <a-button @click="$emit('goTo')" type="primary" :disabled="disabled">{{ $t('avatar.view_on_the_blockchain_browser') }}</a-button>
       </div>
       <a-avatar class="avatar-img" :src="avatar" />
     </a-popover>

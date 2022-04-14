@@ -1,4 +1,4 @@
-# coinerchat-app
+# chatdao-app
 
 ## Project setup
 ```

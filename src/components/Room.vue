@@ -1,59 +1,146 @@
 <template>
   <div class="room">
-    <div v-for="(cAddress, index) in chats" :key="index">
-      <div class="room-card" :class="{ active: chat_user.activeRoom == cAddress }" v-if="app_load.tokenList[cAddress]">
-        <a-badge class="room-card-badge" :count="chat_user.unReads[cAddress]" />
+    <div v-for="(recipientAddress, index) in chatRecipientArr" :key="index">
+      <div
+        class="room-card"
+        :class="{ active: chatSync.userActiveRecipient == recipientAddress }"
+        @click="setUserActiveRecipient(recipientAddress)"
+      >
+        <a-badge class="room-card-badge" />
         <my-avatar
-          :avatar="app_load.tokenList[cAddress].logoURI"
-          :showName="COMMON.math.formatName(cAddress)"
+          v-if="chatAsync.chatRecipientMap[recipientAddress].value.type == 'wallet'"
+          :avatar="appSync.addressAvatarMap[recipientAddress]"
+          :showName="utils.format.address(recipientAddress)"
           @goTo="
-            cAddress === COMMON.web3Utils.ethAddress ? COMMON.link.goETH(app_const.chain) : COMMON.link.goToken(app_const.chain, cAddress)
+            recipientAddress == common.etherAddress
+              ? utils.go.accounts(appSync.ether.getNetwork())
+              : utils.go.token(appSync.ether.getNetwork(), recipientAddress)
           "
         ></my-avatar>
-        <div class="room-card-message" @click="changeActiveRoom(cAddress)">
+        <my-avatar
+          v-else-if="
+            chatAsync.chatRecipientMap[recipientAddress].value.type == 'erc20' &&
+              utils.have.value(appAsync.erc20DetailMap[recipientAddress])
+          "
+          :avatar="appAsync.erc20DetailMap[recipientAddress].value.logoURI"
+          :showName="utils.format.address(recipientAddress)"
+          @goTo="
+            recipientAddress == common.etherAddress
+              ? utils.go.accounts(appSync.ether.getNetwork())
+              : utils.go.token(appSync.ether.getNetwork(), recipientAddress)
+          "
+        ></my-avatar>
+
+        <div class="room-card-message">
           <div class="room-card-name">
-            {{
-              cAddress === CONST.CHAIN_DATA[app_const.chain].COINERCHAT_GROUP
-                ? app_load.tokenList[cAddress].name
-                : app_load.tokenList[cAddress].symbol +
+            <div
+              v-if="
+                chatAsync.chatRecipientMap[recipientAddress].value.type == 'erc20' &&
+                  utils.have.value(appAsync.erc20DetailMap[recipientAddress]) &&
+                  utils.have.value(appAsync.tokenBalanceMap[recipientAddress][appSync.userAddress])
+              "
+            >
+              {{
+                appAsync.erc20DetailMap[recipientAddress].value.symbol +
                   ' (' +
-                  COMMON.math.formatBalance(
-                    app_load.balances[cAddress][app_user.address],
-                    app_load.tokenList[cAddress].decimals,
-                    app_load.tokenList[cAddress].symbol,
-                    app_user.decimals
+                  utils.format.balance(
+                    appAsync.tokenBalanceMap[recipientAddress][appSync.userAddress].value,
+                    appAsync.erc20DetailMap[recipientAddress].value.decimals,
+                    appAsync.erc20DetailMap[recipientAddress].value.symbol,
+                    appStorage.decimalLimit
                   ) +
                   ')'
-            }}
+              }}
+              <a-icon
+                type="close-circle-o"
+                class="room-card-close"
+                @click.stop="closeChatRecipient(recipientAddress)"
+                v-if="chatRecipientArr.length > 1"
+              />
+            </div>
+            <div v-else-if="chatAsync.chatRecipientMap[recipientAddress].value.type == 'wallet'">
+              {{ recipientAddress == chatSync.userAddress ? 'self' : utils.format.address(recipientAddress) }}
+              <a-icon
+                type="close-circle-o"
+                class="room-card-close"
+                @click.stop="closeChatRecipient(recipientAddress)"
+                v-if="chatRecipientArr.length > 1"
+              />
+            </div>
           </div>
-          <div
-            class="room-card-new"
-            v-if="
-              chat_load.groups[cAddress] &&
-                chat_load.groups[cAddress].messageIds.length > 0 &&
-                chat_load.messages[COMMON.math.getLast(chat_load.groups[cAddress].messageIds)]
-            "
-          >
+          <div class="room-card-new">
             <div
-              class="text"
-              v-text="
-                '[' +
-                  (cAddress === CONST.CHAIN_DATA[app_const.chain].COINERCHAT_GROUP
-                    ? COMMON.math.formatName(chat_load.messages[COMMON.math.getLast(chat_load.groups[cAddress].messageIds)].sAddress)
-                    : COMMON.math.formatBalance(
-                        app_load.balances[chat_load.messages[COMMON.math.getLast(chat_load.groups[cAddress].messageIds)].gAddress][
-                          chat_load.messages[COMMON.math.getLast(chat_load.groups[cAddress].messageIds)].sAddress
-                        ],
-                        app_load.tokenList[chat_load.messages[COMMON.math.getLast(chat_load.groups[cAddress].messageIds)].gAddress]
-                          .decimals,
-                        app_load.tokenList[chat_load.messages[COMMON.math.getLast(chat_load.groups[cAddress].messageIds)].gAddress].symbol,
-                        app_user.decimals
+              v-if="
+                utils.have.value(chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)])
+              "
+            >
+              <div
+                v-if="
+                  chatAsync.chatRecipientMap[recipientAddress].value.type == 'erc20' &&
+                    utils.have.value(
+                      appAsync.tokenBalanceMap[recipientAddress][
+                        chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
+                          .sender
+                      ]
+                    ) &&
+                    utils.have.value(appAsync.erc20DetailMap[recipientAddress])
+                "
+                class="text"
+                v-text="
+                  '[' +
+                    utils.format.balance(
+                      appAsync.tokenBalanceMap[recipientAddress][
+                        chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
+                          .sender
+                      ].value,
+                      appAsync.erc20DetailMap[recipientAddress].value.decimals,
+                      appAsync.erc20DetailMap[recipientAddress].value.symbol,
+                      appStorage.decimalLimit
+                    ) +
+                    ']：' +
+                    chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value.content
+                "
+              ></div>
+              <div v-else-if="chatAsync.chatRecipientMap[recipientAddress].value.type == 'wallet'">
+                <div
+                  v-if="
+                    chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
+                      .typeNumber == 0
+                  "
+                  class="text"
+                  v-text="
+                    '[' +
+                      utils.format.address(
+                        chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
+                          .sender
                       ) +
                       ']：' +
-                      chat_load.messages[COMMON.math.getLast(chat_load.groups[cAddress].messageIds)].content)
-              "
-              v-if="chat_load.messages[COMMON.math.getLast(chat_load.groups[cAddress].messageIds)].type === 0"
-            ></div>
+                      chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
+                        .content
+                  "
+                ></div>
+                <div
+                  v-else-if="
+                    chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
+                      .typeNumber == 1
+                  "
+                  class="text"
+                  v-text="
+                    '[' +
+                      utils.format.address(
+                        chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
+                          .sender
+                      ) +
+                      ']：' +
+                      (chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
+                        .decryptContent
+                        ? chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
+                            .decryptContent
+                        : '加密消息')
+                  "
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -64,12 +151,12 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
+import { AppSync, AppAsync, AppStorage, ChatSync, ChatAsync } from '@/store';
+import { utils, common } from '@/const';
 import MyAvatar from '@/components/Avatar.vue';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
-import * as COMMON from '@/const/common';
-import * as CONST from '@/const/const';
 
 @Component({
   components: {
@@ -77,128 +164,71 @@ import * as CONST from '@/const/const';
   },
 })
 export default class MyRoom extends Vue {
-  @appModule.State('user') app_user: any;
-  @appModule.State('load') app_load: any;
-  @appModule.State('const') app_const: any;
-  @chatModule.State('user') chat_user: any;
-  @chatModule.State('load') chat_load: any;
+  @appModule.State('storage') appStorage: AppStorage;
+  @appModule.State('sync') appSync: AppSync;
+  @appModule.State('async') appAsync: AppAsync;
+  @appModule.State('sync') chatSync: ChatSync;
+  @chatModule.State('async') chatAsync: ChatAsync;
 
-  COMMON: any = COMMON;
-  CONST: any = CONST;
-  chats: Array<string> = [];
+  common = common;
+  utils = utils;
+  chatRecipientArr: Array<string> = [];
 
-  created() {
-    this.setChats();
-    this.chat_user.activeRoom = COMMON.web3Utils.ethAddress;
-    this.sortChats();
-    this.listenMessages();
+  @Watch('chatAsync.chatRecipientMap', { deep: true })
+  changeChatRecipientMap() {
+    this.setChatRecipient();
   }
 
-  @Watch('app_user.tokens', { deep: true })
-  changeTokens() {
-    this.setChats();
-    this.sortChats();
+  @Watch('chatAsync.chatMessageMap', { deep: true })
+  changeChatMessageMap() {
+    this.setChatRecipient();
   }
 
-  @Watch('chat_load.groups', { deep: true })
-  changeGroups() {
-    this.sortChats();
-    this.setMessages();
-  }
-
-  @Watch('chat_load.messages', { deep: true })
-  changeMessages() {
-    this.checkBalances();
-    this.checkAvatars();
-  }
-
-  @Watch('chats', { deep: true })
-  changeChats() {
-    this.setGroups();
-  }
-
-  sortChats() {
-    this.chats = this.chats.sort((a: any, b: any) => {
-      if (
-        this.chat_load.groups[a] &&
-        this.chat_load.groups[b] &&
-        this.chat_load.messages[COMMON.math.getLast(this.chat_load.groups[b].messageIds)] &&
-        this.chat_load.messages[COMMON.math.getLast(this.chat_load.groups[a].messageIds)]
-      ) {
-        return (
-          this.chat_load.messages[COMMON.math.getLast(this.chat_load.groups[b].messageIds)].cDate -
-          this.chat_load.messages[COMMON.math.getLast(this.chat_load.groups[a].messageIds)].cDate
-        );
-      }
-      if (this.chat_load.groups[a] && this.chat_load.messages[COMMON.math.getLast(this.chat_load.groups[a].messageIds)]) {
-        return 1;
-      }
-      return -1;
+  setChatRecipient() {
+    let chatRecipientArr = Object.keys(this.chatAsync.chatRecipientMap).filter((recipientAddress) => {
+      return utils.have.value(this.chatAsync.chatRecipientMap[recipientAddress]);
     });
-  }
-
-  checkBalances() {
-    for (let key in this.chat_load.messages) {
-      if (this.chat_load.messages[key]) {
-        this.$store.dispatch('app/addBalance', [this.chat_load.messages[key].gAddress, this.chat_load.messages[key].sAddress]);
-      }
-    }
-  }
-
-  checkAvatars() {
-    for (let key in this.chat_load.messages) {
-      if (this.chat_load.messages[key]) {
-        this.$store.dispatch('app/addAvatar', this.chat_load.messages[key].sAddress);
-      }
-    }
-  }
-
-  setChats() {
-    this.chats = [...this.app_user.tokens];
-  }
-
-  setGroups() {
-    this.chats.forEach(async (cAddress: string) => {
-      if (this.chat_load.groups[cAddress] === undefined) {
-        this.$set(this.chat_load.groups, cAddress, null);
-        const messageLength = await this.app_const.web3.MessageFunc.getMessageIdsLengthByGroup(cAddress);
-        let start = 0;
-        if (messageLength > this.app_user.messageSkip) {
-          start = messageLength - this.app_user.messageSkip;
-        }
-        const messageIds = await this.app_const.web3.MessageFunc.getLimitMessageIdsByGroup(cAddress, this.app_user.messageSkip, start);
-        this.$set(this.chat_load.groups, cAddress, { messageLength, messageIds, start });
-        const persons = await this.app_const.web3.MessageFunc.getGroupPersons(cAddress);
-        this.$set(this.chat_load.groups[cAddress], 'persons', persons);
-      }
-    });
-  }
-
-  setMessages() {
-    for (let key in this.chat_load.groups) {
-      if (this.chat_load.groups[key]) {
-        this.chat_load.groups[key].messageIds.forEach(async (messageId: number) => {
-          if (this.chat_load.messages[messageId] === undefined) {
-            this.$set(this.chat_load.messages, messageId, null);
-            const message = await this.app_const.web3.MessageFunc.getMessageByMessageId(messageId);
-            this.$set(this.chat_load.messages, messageId, message);
+    if (chatRecipientArr.length >= 2) {
+      chatRecipientArr = chatRecipientArr.sort((recipientAddress_a, recipientAddress_b) => {
+        if (
+          utils.have.value(
+            this.chatAsync.chatMessageMap[utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_a].value.messageIdArr)]
+          ) &&
+          utils.have.value(
+            this.chatAsync.chatMessageMap[utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_b].value.messageIdArr)]
+          )
+        ) {
+          return (
+            this.chatAsync.chatMessageMap[
+              utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_b].value.messageIdArr)
+            ].value.createDate.getTime() -
+            this.chatAsync.chatMessageMap[
+              utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_a].value.messageIdArr)
+            ].value.createDate.getTime()
+          );
+        } else {
+          if (
+            utils.have.value(
+              this.chatAsync.chatMessageMap[utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_a].value.messageIdArr)]
+            )
+          ) {
+            return -1;
           }
-        });
-      }
+          return 1;
+        }
+      });
+    }
+    if (this.chatRecipientArr.toString() != chatRecipientArr.toString()) {
+      this.chatRecipientArr = chatRecipientArr;
     }
   }
 
-  listenMessages() {
-    this.app_const.web3.Tools.addEvent('sendMessage', (gAddress: string, pAddress: string, messageId: number) => {
-      if (this.chat_load.groups[gAddress]) {
-        this.$set(this.chat_load.groups[gAddress], 'messageIds', [...this.chat_load.groups[gAddress].messageIds, messageId]);
-      }
-    });
+  async closeChatRecipient(recipientAddress: string) {
+    await this.$store.dispatch('chat/deleteChatRecipient', recipientAddress);
   }
 
-  changeActiveRoom(cAddress: string) {
-    this.chat_user.activeRoom = cAddress;
-    this.$set(this.chat_user.unReads, cAddress, 0);
+  async setUserActiveRecipient(recipientAddress: string) {
+    await this.$store.dispatch('chat/setUserActiveRecipient', recipientAddress);
   }
 }
 </script>
@@ -272,6 +302,11 @@ export default class MyRoom extends Vue {
         overflow: hidden; //超出的文本隐藏
         text-overflow: ellipsis; //溢出用省略号显示
         white-space: nowrap; //溢出不换行
+        .room-card-close {
+          font-size: 20px;
+          float: right;
+          color: rgb(89, 91, 92);
+        }
       }
       .room-card-new {
         > * {

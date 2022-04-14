@@ -2,76 +2,121 @@
   <div class="message">
     <div class="message-header">
       <div class="message-header-box">
-        <span class="message-header-text" v-if="app_load.tokenList[chat_user.activeRoom] && chat_load.groups[chat_user.activeRoom]">
-          {{
-            app_load.tokenList[chat_user.activeRoom].name +
-              (chat_user.activeRoom === CONST.CHAIN_DATA[app_const.chain].COINERCHAT_GROUP
-                ? ''
-                : '(' + app_load.tokenList[chat_user.activeRoom].symbol + ') ') +
-              ' 成员：' +
-              (chat_load.groups[chat_user.activeRoom].persons ? chat_load.groups[chat_user.activeRoom].persons.length : '')
-          }}
-        </span>
-        <a-icon type="sync" spin class="message-header-icon" v-if="listening" />
-        <my-active></my-active>
+        <div v-if="utils.have.value(chatAsync.chatRecipientMap[chatSync.userActiveRecipient])">
+          <div v-if="chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.type == 'erc20'">
+            <span class="message-header-text">
+              <div v-if="utils.have.value(appAsync.erc20DetailMap[chatSync.userActiveRecipient])">
+                {{
+                  appAsync.erc20DetailMap[chatSync.userActiveRecipient].value.name +
+                    '(' +
+                    appAsync.erc20DetailMap[chatSync.userActiveRecipient].value.symbol +
+                    ') '
+                }}
+              </div>
+            </span>
+          </div>
+          <div v-if="chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.type == 'wallet'">
+            <span class="message-header-text">
+              {{ chatSync.userActiveRecipient }}
+            </span>
+            <myIcon
+              v-if="
+                chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.publicKey.length != 0 ||
+                  chatSync.userActiveRecipient == appSync.userAddress
+              "
+              :type="chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.encrypt ? 'lock' : 'unlock'"
+              :class="
+                chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.publicKey.length != 0
+                  ? chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.encrypt
+                    ? 'message-header-icon-red'
+                    : 'message-header-icon-blue'
+                  : 'message-header-icon-white-blue'
+              "
+              @click="changeChatRecipientEncrypt()"
+            />
+          </div>
+        </div>
       </div>
     </div>
     <transition name="loading">
-      <div class="message-loading" v-if="status === 'load' || status === 'get'">
+      <div class="message-loading" v-if="chatStatus == 'load' || chatStatus == 'get'">
         <a-icon type="sync" spin class="message-loading-icon" />
       </div>
     </transition>
     <div class="message-main" :style="{ opacity: messageOpacity }">
-      <div class="message-content" v-if="chat_load.groups[chat_user.activeRoom]">
+      <div class="message-content">
         <transition name="noData">
           <div
             class="message-content-noData"
-            v-if="chat_load.groups[chat_user.activeRoom].messageLength <= chat_load.groups[chat_user.activeRoom].messageIds.length"
+            v-if="
+              utils.have.value(chatAsync.chatRecipientMap[chatSync.userActiveRecipient]) &&
+                chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.messageIdLength <=
+                  chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.messageIdArr.length
+            "
           >
-            没有更多消息了~
+            {{ $t('message.no_more_message') }}
           </div>
         </transition>
-        <template v-for="(message, index) in messages">
-          <div class="message-content-message" :key="index" :class="{ 'text-right': message.sAddress === app_user.address }">
+        <template v-for="(chatMessage, index) in chatMessages">
+          <div class="message-content-message" :key="index" :class="{ 'text-right': chatMessage.sender == appSync.userAddress }">
             <my-avatar
-              :avatar="app_load.avatars[message.sAddress]"
+              v-if="
+                chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.type == 'erc20' &&
+                  utils.have.value(appAsync.tokenBalanceMap[chatSync.userActiveRecipient][chatMessage.sender]) &&
+                  utils.have.value(appAsync.erc20DetailMap[chatSync.userActiveRecipient])
+              "
+              :avatar="appSync.addressAvatarMap[chatMessage.sender]"
               :name="
-                message.sAddress === app_user.address
+                chatMessage.sender == appSync.userAddress
                   ? ''
-                  : message.gAddress === CONST.CHAIN_DATA[app_const.chain].COINERCHAT_GROUP
-                  ? COMMON.math.formatName(message.sAddress)
-                  : COMMON.math.formatBalance(
-                      app_load.balances[message.gAddress][message.sAddress],
-                      app_load.tokenList[message.gAddress].decimals,
-                      app_load.tokenList[message.gAddress].symbol,
-                      app_user.decimals
+                  : utils.format.balance(
+                      appAsync.tokenBalanceMap[chatSync.userActiveRecipient][chatMessage.sender].value,
+                      appAsync.erc20DetailMap[chatSync.userActiveRecipient].value.decimals,
+                      appAsync.erc20DetailMap[chatSync.userActiveRecipient].value.symbol,
+                      appStorage.decimalLimit
                     )
               "
-              :time="COMMON.math.formatDate(message.cDate)"
-              :showName="COMMON.math.formatName(message.sAddress)"
-              @goTo="COMMON.link.goAddress(app_const.chain, message.sAddress)"
+              :time="utils.format.date(chatMessage.createDate)"
+              :showName="utils.format.address(chatMessage.sender)"
+              @goTo="utils.go.address(appSync.ether.getNetwork(), chatMessage.sender)"
             ></my-avatar>
-            <a-popover trigger="click" style="display:inline-block" v-if="message.block">
+            <my-avatar
+              v-if="chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.type == 'wallet'"
+              :avatar="appSync.addressAvatarMap[chatMessage.sender]"
+              :name="''"
+              :time="utils.format.date(chatMessage.createDate)"
+              :showName="utils.format.address(chatMessage.sender)"
+              @goTo="utils.go.address(appSync.ether.getNetwork(), chatMessage.sender)"
+            ></my-avatar>
+
+            <a-popover style="display:inline-block">
               <div slot="content" class="avatar-card">
-                <a-icon type="loading" class="loading1-icon" v-if="message.block.status === 'loading1'" />
-                <a-icon type="loading" class="loading2-icon" v-if="message.block.status === 'loading2'" />
-                <a-icon type="exclamation-circle" class="error-icon" v-if="message.block.status === 'error'" />
-                <a-icon type="check-circle" class="check-icon" v-if="message.block.status === 'success'" />
-                <div>
-                  {{ message.hash ? COMMON.math.formatHash(message.hash) : '没有发送！' }}
-                </div>
-                <a-button @click="COMMON.link.goTX(app_const.chain, message.hash)" type="primary" :disabled="!message.hash"
-                  >在区块链浏览器上查看</a-button
-                >
+                <a-icon type="loading" class="loading1-icon" v-if="chatMessage.status == 'send'" />
+                <a-icon type="loading" class="loading2-icon" v-if="chatMessage.status == 'pending'" />
+                <a-icon type="exclamation-circle" class="error-icon" v-if="chatMessage.status == 'error'" />
+                <a-icon type="check-circle" class="check-icon" v-if="chatMessage.status == 'success'" />
+                <div>{{ chatMessage.hash ? utils.format.hash(chatMessage.hash) : $t('message.not_send') }}</div>
+                <a-button @click="utils.go.tx(appSync.ether.getNetwork(), chatMessage.hash)" type="primary" :disabled="!chatMessage.hash">{{
+                  $t('message.view_on_the_blockchain_browser')
+                }}</a-button>
               </div>
-              <a-icon type="loading" class="loading1-icon" v-if="message.block.status === 'loading1'" />
-              <a-icon type="loading" class="loading2-icon" v-if="message.block.status === 'loading2'" />
-              <a-icon type="exclamation-circle" class="error-icon" v-if="message.block.status === 'error'" />
-              <a-icon type="check-circle" class="check-icon" v-if="message.block.status === 'success'" />
+              <a-icon type="loading" class="loading1-icon" v-if="chatMessage.status == 'send'" />
+              <a-icon type="loading" class="loading2-icon" v-if="chatMessage.status == 'pending'" />
+              <a-icon type="exclamation-circle" class="error-icon" v-if="chatMessage.status == 'error'" />
+              <a-icon type="check-circle" class="check-icon" v-if="chatMessage.status == 'success'" />
             </a-popover>
-            <div v-if="message.type === 0" class="message-content-text">
-              <a v-if="COMMON.math.isUrl(message.content)" :href="message.content" target="_blank">{{ message.content }} </a>
-              <div v-else v-text="message.content"></div>
+            <div v-if="chatMessage.typeNumber == 0" class="message-content-text">
+              <a v-if="utils.is.url(chatMessage.content)" :href="chatMessage.content" target="_blank">{{ chatMessage.content }} </a>
+              <div v-else v-text="chatMessage.content"></div>
+            </div>
+            <div v-else-if="chatMessage.typeNumber == 1" class="message-content-text">
+              <div v-if="chatMessage.decryptContent">
+                <a v-if="utils.is.url(chatMessage.decryptContent)" :href="chatMessage.decryptContent" target="_blank"
+                  >{{ chatMessage.decryptContent }}
+                </a>
+                <div v-else v-text="chatMessage.decryptContent"></div>
+              </div>
+              <div v-else v-text="$t('message.click_to_decrypt_message')" @click="decryptContent(chatMessage.messageId)"></div>
             </div>
           </div>
         </template>
@@ -84,56 +129,53 @@
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import MyAvatar from '@/components/Avatar.vue';
-import MyActive from '@/components/Active.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
+import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, ChatSendMessage, ChatMessage } from '@/store';
+import { utils, common } from '@/const';
+
 const chatModule = namespace('chat');
 const appModule = namespace('app');
-import * as COMMON from '@/const/common';
-import * as CONST from '@/const/const';
 
 @Component({
   components: {
-    MyActive,
     MyAvatar,
     MyInput,
   },
 })
 export default class MyMessage extends Vue {
-  @appModule.State('user') app_user: any;
-  @appModule.State('load') app_load: any;
-  @appModule.State('const') app_const: any;
-  @chatModule.State('user') chat_user: any;
-  @chatModule.State('load') chat_load: any;
+  @appModule.State('storage') appStorage: AppStorage;
+  @appModule.State('sync') appSync: AppSync;
+  @appModule.State('async') appAsync: AppAsync;
+  @chatModule.State('sync') chatSync: ChatSync;
+  @chatModule.State('async') chatAsync: ChatAsync;
 
-  COMMON: any = COMMON;
-  CONST: any = CONST;
+  utils = utils;
+  common = common;
 
   messageDom: HTMLElement;
   messageContentDom: HTMLElement;
   headerDom: HTMLElement;
   messageOpacity: number = 1;
   lastMessagePosition: number = 0;
-  listening: boolean = true;
-  status: string = 'listen';
-  messages: Array<any> = [];
 
-  @Watch('chat_load.messages', { deep: true })
-  changeMessages() {
-    this.setMessages();
-    this.checkMessages();
+  chatStatus: string = 'load';
+  chatMessages: Array<ChatMessage | ChatSendMessage> = [];
+
+  @Watch('chatAsync.chatMessageMap', { deep: true })
+  changeChatMessageMap() {
+    this.setChatMessages();
   }
 
-  @Watch('chat_user.myMessages', { deep: true })
-  changeMyMessages() {
-    if (this.chat_user.myMessages[this.chat_user.activeRoom].length) {
-      this.setMessages();
-      this.scrollToBottom();
-    }
+  @Watch('chatAsync.chatRecipientMap', { deep: true })
+  changeChatRecipientMap() {
+    this.setChatMessages();
   }
 
-  @Watch('chat_user.activeRoom')
-  changeActiveRoom() {
+  @Watch('chatSync.userActiveRecipient')
+  changeUserActiveRecipient() {
+    this.chatStatus = 'load';
+    this.chatMessages = [];
     this.messageOpacity = 0;
     if (this.headerDom) {
       this.headerDom.classList.add('transition');
@@ -141,110 +183,93 @@ export default class MyMessage extends Vue {
         this.headerDom.classList.remove('transition');
       }, 400);
     }
-    this.scrollToBottom();
+    this.setChatMessages();
   }
 
-  mounted() {
-    this.status = 'load';
-    if (!this.chat_user.myMessages[this.chat_user.activeRoom]) {
-      this.$set(this.chat_user.myMessages, this.chat_user.activeRoom, []);
-    }
-    this.checkMessages();
-  }
-
-  setMessages() {
-    let messages = [];
-    let messageIds = [];
-    for (let i in this.chat_user.myMessages[this.chat_user.activeRoom]) {
-      messages.push({ ...this.chat_user.myMessages[this.chat_user.activeRoom][i], sAddress: this.app_user.address });
-      if (this.chat_user.myMessages[this.chat_user.activeRoom][i].messageId) {
-        messageIds.push(this.chat_user.myMessages[this.chat_user.activeRoom][i].messageId);
-      }
-    }
-    for (let i in this.chat_load.groups[this.chat_user.activeRoom].messageIds) {
-      console.log(this.chat_load.groups[this.chat_user.activeRoom].messageIds[i]);
-      console.log(messageIds.indexOf(this.chat_load.groups[this.chat_user.activeRoom].messageIds[i]));
-      if (
-        messageIds.indexOf(this.chat_load.groups[this.chat_user.activeRoom].messageIds[i]) == -1 &&
-        this.chat_load.messages[this.chat_load.groups[this.chat_user.activeRoom].messageIds[i]]
-      ) {
-        messages.push(this.chat_load.messages[this.chat_load.groups[this.chat_user.activeRoom].messageIds[i]]);
-      }
-    }
-    messages = messages.sort((a: any, b: any) => {
-      return a.cDate - b.cDate;
-    });
-    this.messages = messages;
-  }
-
-  checkMessages() {
-    if (this.chat_load.groups[this.chat_user.activeRoom]) {
-      let have = true;
-      for (let i = 0; i < this.chat_load.groups[this.chat_user.activeRoom].messageIds.length; i++) {
-        if (!this.chat_load.messages[this.chat_load.groups[this.chat_user.activeRoom].messageIds[i]]) {
-          have = false;
+  setChatMessages() {
+    if (utils.have.value(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient])) {
+      let chatMessages: Array<ChatMessage | ChatSendMessage> = [];
+      let chatMessageIds: Array<number> = [];
+      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr.forEach((sendMessage) => {
+        chatMessages.push(sendMessage);
+        if (sendMessage.messageId) {
+          chatMessageIds.push(sendMessage.messageId);
         }
-      }
-      if (this.status === 'get') {
-        this.scrollTo();
-      }
-      if (have) {
-        if (this.status === 'load') {
-          this.messageDom = document.getElementsByClassName('message-main')[0] as HTMLElement;
-          this.messageContentDom = document.getElementsByClassName('message-content')[0] as HTMLElement;
-          this.headerDom = document.getElementsByClassName('message-header-text')[0] as HTMLElement;
-          this.messageDom.addEventListener('scroll', this.handleScroll);
-          this.scrollToBottom();
-        }
-        if (
-          this.status === 'listen' &&
-          this.messageDom.scrollTop + this.messageDom.offsetHeight + 100 > this.messageContentDom.scrollHeight
-        ) {
-          this.scrollToBottom();
-        }
-        this.status = 'listen';
+      });
+      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.messageIdArr
+        .filter((messageId) => {
+          return utils.have.value(this.chatAsync.chatMessageMap[messageId]) && chatMessageIds.indexOf(messageId) == -1;
+        })
+        .forEach((messageId) => {
+          chatMessages.push(this.chatAsync.chatMessageMap[messageId].value);
+        });
+      if (this.chatMessages.length != chatMessages.length) {
+        chatMessages = chatMessages.sort((chatMessage_a: ChatMessage, chatMessage_b: ChatMessage) => {
+          return chatMessage_a.createDate.getTime() - chatMessage_b.createDate.getTime();
+        });
+        this.chatMessages = chatMessages;
+        this.checkChatMessages();
+      } else if (this.chatMessages.length == 0) {
+        this.checkChatMessages();
       }
     }
   }
 
-  /**
-   * 监听滚动事件
-   */
+  checkChatMessages() {
+    let loadAll = this.chatMessages.length >= this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.messageIdArr.length;
+    if (this.chatStatus == 'get') {
+      this.scrollTo();
+      if (loadAll) {
+        this.chatStatus = 'listen';
+      }
+    } else if (this.chatStatus == 'load') {
+      this.messageDom = document.getElementsByClassName('message-main')[0] as HTMLElement;
+      this.messageContentDom = document.getElementsByClassName('message-content')[0] as HTMLElement;
+      this.headerDom = document.getElementsByClassName('message-header-text')[0] as HTMLElement;
+      this.messageDom.addEventListener('scroll', this.handleScroll);
+      this.scrollToBottom();
+      if (loadAll) {
+        this.chatStatus = 'listen';
+      }
+    } else if (
+      this.chatStatus == 'listen' &&
+      this.messageDom.scrollTop + this.messageDom.offsetHeight + 100 > this.messageContentDom.scrollHeight
+    ) {
+      this.scrollToBottom();
+    }
+  }
+
   handleScroll(event: Event) {
     if (event.currentTarget) {
-      if (this.messageDom.scrollTop === 0 && this.status === 'listen') {
+      if (this.messageDom.scrollTop == 0 && this.chatStatus == 'listen') {
         this.lastMessagePosition = this.messageContentDom.offsetHeight;
-        this.getMoreMessage();
+        this.getChatMessage();
       }
     }
   }
 
-  /**
-   * 获取更多消息
-   * @params text
-   */
-  async getMoreMessage() {
-    if (this.chat_load.groups[this.chat_user.activeRoom].start !== 0) {
-      this.status = 'get';
-      let start = 0;
-      if (this.chat_load.groups[this.chat_user.activeRoom].start > this.app_user.messageSkip) {
-        start = this.chat_load.groups[this.chat_user.activeRoom].start - this.app_user.messageSkip;
-      }
-      const messageIds = await this.app_const.web3.MessageFunc.getLimitMessageIdsByGroup(
-        this.chat_user.activeRoom,
-        this.app_user.messageSkip,
-        start
-      );
-      this.$set(this.chat_load.groups[this.chat_user.activeRoom], 'messageIds', [
-        ...messageIds,
-        ...this.chat_load.groups[this.chat_user.activeRoom].messageIds,
-      ]);
-      this.$set(this.chat_load.groups[this.chat_user.activeRoom], 'start', start);
+  async changeChatRecipientEncrypt() {
+    if (this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.publicKey.length != 0) {
+      await this.$store.dispatch('chat/changeChatRecipientEncrypt');
+    } else {
+      await this.$store.dispatch('chat/updatePublicKey');
     }
   }
-  /**
-   * 滚动到底部
-   */
+
+  async decryptContent(messageId: number) {
+    await this.$store.dispatch('chat/decryptContent', messageId);
+  }
+
+  async getChatMessage() {
+    if (
+      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.messageIdLength >
+      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.messageIdArr.length
+    ) {
+      this.chatStatus = 'get';
+      await this.$store.dispatch('chat/getChatMessage', this.chatSync.userActiveRecipient);
+    }
+  }
+
   scrollToBottom() {
     this.$nextTick(() => {
       this.messageDom.scrollTop = this.messageDom.scrollHeight;
@@ -272,8 +297,17 @@ export default class MyMessage extends Vue {
     .message-header-text {
       color: #fff;
     }
-    .message-header-icon {
+    .message-header-icon-white-blue {
       margin-left: 5px;
+      color: rgb(137, 164, 238);
+    }
+    .message-header-icon-red {
+      margin-left: 5px;
+      color: rgb(248, 7, 7);
+    }
+    .message-header-icon-blue {
+      margin-left: 5px;
+      color: rgb(11, 71, 235);
     }
   }
   .message-loading {

@@ -13,23 +13,34 @@
     <a-input
       autocomplete="off"
       type="text"
-      :placeholder="'你好...'"
+      :placeholder="$t('input.hello') + '...'"
       v-model="messageInput"
       ref="messageInput"
       autoFocus
       style="color: #000"
-      @pressEnter="sendMessage"
+      @pressEnter="sendChatMessage"
     />
-    <img class="message-input-button" @click="sendMessage" src="/static/pages/send.png" alt="" />
+    <myIcon
+      type="send"
+      :class="
+        utils.have.value(chatAsync.chatRecipientMap[chatSync.userActiveRecipient])
+          ? chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.encrypt
+            ? 'message-input-button2'
+            : 'message-input-button1'
+          : 'message-input-button1'
+      "
+      @click="sendChatMessage"
+    />
   </div>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import MyEmoji from '@/components/Emoji.vue';
 import { namespace } from 'vuex-class';
-import * as COMMON from '@/const/common';
-import * as Token from '@/web3/contracts/Token';
+import { ContractTransaction } from '@ethersproject/contracts';
+import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, ChatSendMessage } from '@/store';
+import { utils } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -40,72 +51,87 @@ const appModule = namespace('app');
   },
 })
 export default class MyInput extends Vue {
-  @appModule.State('user') app_user: any;
-  @appModule.State('load') app_load: any;
-  @appModule.State('const') app_const: any;
-  @chatModule.State('user') chat_user: any;
-  @chatModule.State('load') chat_load: any;
+  @appModule.State('storage') appStorage: AppStorage;
+  @appModule.State('sync') appSync: AppSync;
+  @appModule.State('async') appAsync: AppAsync;
+  @chatModule.State('sync') chatSync: ChatSync;
+  @chatModule.State('async') chatAsync: ChatAsync;
 
+  utils = utils;
   messageInput: string = '';
-  //lastTime: number = 0;
-  //reward: number = 0;
-  //tokenAddress: string = Token.address;
-
-  async mounted() {
-    //const that = this;
-    // autoRun(async function() {
-    //   that.reward = await that.getReward(that.activeRoomAddress);
-    // }, 3000);
-  }
-
-  /**
-   * 点击切换房间进入此方法
-   */
-  @Watch('chat_user.activeRoom')
-  async changeActiveRoom() {
-    //this.reward = await this.getReward(this.activeRoomAddress);
-    // this.$nextTick(() => {
-    //   if (!this.app_const.mobile) {
-    //     this.$refs.messageInput.focus();
-    //   }
-    // });
-  }
 
   /**
    * 消息发送前校验
    */
-  async sendMessage() {
+  async sendChatMessage() {
     try {
       if (!this.messageInput.trim()) {
-        throw new Error('不能发送空消息!');
+        throw this.$t('input.cannot_send_empty_messages') as string;
       }
       if (this.messageInput.length > 220) {
-        throw new Error('消息太长!');
+        throw this.$t('input.message_is_too_long') as string;
       }
-      console.log(this.chat_user.myMessages);
-      let index = this.chat_user.myMessages[this.chat_user.activeRoom].length;
-      this.$set(this.chat_user.myMessages[this.chat_user.activeRoom], index, {
-        type: 0,
-        content: this.messageInput,
-        gAddress: this.chat_user.activeRoom,
-        cDate: new Date(),
-        block: { status: 'loading1', message: '等待发送' },
-      });
-      const content = this.messageInput;
+      let content;
+      let message: ChatSendMessage;
+      if (this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.encrypt) {
+        content = await this.$store.dispatch('chat/encryptContent', this.messageInput);
+        message = {
+          status: 'send',
+          hash: '',
+          messageId: 0,
+          sender: this.appSync.userAddress,
+          recipientArr: [this.chatSync.userActiveRecipient],
+          content,
+          decryptContent: this.messageInput,
+          typeNumber: 1,
+          createDate: new Date(),
+        };
+      } else {
+        content = this.messageInput;
+        message = {
+          status: 'send',
+          hash: '',
+          messageId: 0,
+          sender: this.appSync.userAddress,
+          recipientArr: [this.chatSync.userActiveRecipient],
+          content,
+          typeNumber: 0,
+          createDate: new Date(),
+        };
+      }
+      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr.push(message);
       this.messageInput = '';
-      console.log(this.chat_user.myMessages[this.chat_user.activeRoom]);
-      const res = await this.app_const.web3.MessageFunc.personSendMessageToGroup(this.chat_user.activeRoom, content, 0, (block: any) => {
-        if (block.status === 'loading2') {
-          this.$set(this.chat_user.myMessages[this.chat_user.activeRoom][index], 'hash', block.hash);
-        }
-        this.$set(this.chat_user.myMessages[this.chat_user.activeRoom][index], 'block', block);
-      });
+      const messageId = await this.$store.dispatch('chat/sendChatMessage', [
+        [this.chatSync.userActiveRecipient],
+        message.content,
+        message.typeNumber,
+        (transaction: ContractTransaction) => {
+          this.$set(
+            utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr),
+            'hash',
+            transaction.hash
+          );
+          this.$set(
+            utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr),
+            'status',
+            'pending'
+          );
+        },
+      ]);
       this.$set(
-        this.chat_user.myMessages[this.chat_user.activeRoom][index],
+        utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr),
         'messageId',
-        Number(res.events.SendMessage.returnValues.messageId)
+        messageId
       );
-    } catch (err) {
+      this.$set(
+        utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr),
+        'status',
+        'success'
+      );
+      // eslint-disable-next-line prettier/prettier
+    } catch (err:any) {
+      this.$set(utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr), 'status', 'error');
+      console.log(err);
       this.$message.error(err.message);
     }
   }
@@ -161,12 +187,21 @@ export default class MyInput extends Vue {
   input {
     height: 40px;
   }
-  .message-input-button {
-    width: 30px;
-    cursor: pointer;
-    position: absolute;
+  .message-input-button1 {
+    font-size: 35px;
     right: 10px;
     top: 4px;
+    color: rgba(11, 71, 235, 0.85);
+    cursor: pointer;
+    position: absolute;
+  }
+  .message-input-button2 {
+    font-size: 35px;
+    right: 10px;
+    top: 4px;
+    color: rgba(248, 7, 7, 0.85);
+    cursor: pointer;
+    position: absolute;
   }
 }
 

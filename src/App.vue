@@ -1,33 +1,18 @@
 <template>
   <div id="app">
     <router-view />
-    <img class="background" v-if="app_user.background" :src="app_user.background" alt="" />
+    <img class="background" :src="appStorage.background" alt="" />
   </div>
 </template>
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
-import * as CONST from '@/const/const';
+import { AppStorage } from '@/store';
 const appModule = namespace('app');
 
 @Component
 export default class MyChat extends Vue {
-  @appModule.State('const') app_const: any;
-  @appModule.State('user') app_user: any;
-
-  mounted() {
-    this.app_const.mobile = this.isMobile();
-    if (!this.app_user.background || !this.app_user.background.trim().length) {
-      this.app_user.background = CONST.BACKGROUND[0].url;
-    }
-  }
-
-  isMobile() {
-    let flag = navigator.userAgent.match(
-      /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i
-    );
-    return flag && flag.length;
-  }
+  @appModule.State('storage') appStorage: AppStorage;
 }
 </script>
 <style lang="scss">

@@ -1,8 +1,9 @@
+/* eslint-disable prettier/prettier */
 <template>
   <div
     class="chat"
     :style="{
-      '--bg-image': `url('${app_user.background}')`,
+      '--bg-image': `url('${appStorage.background}')`,
     }"
   >
     <div class="chat-part1" v-if="visibleTool">
@@ -36,8 +37,7 @@ import MyRoom from '@/components/Room.vue';
 import MyMessage from '@/components/Message.vue';
 import MySearch from '@/components/Search.vue';
 import { namespace } from 'vuex-class';
-import * as TOKEN_LIST from '@/const/tokenList';
-import * as COMMON from '@/const/common';
+import { AppStorage, AppSync } from '@/store';
 const appModule = namespace('app');
 
 @Component({
@@ -49,47 +49,24 @@ const appModule = namespace('app');
   },
 })
 export default class MyChat extends Vue {
-  @appModule.State('user') app_user: any;
-  @appModule.State('const') app_const: any;
-  @appModule.State('load') app_load: any;
+  @appModule.State('storage') appStorage: AppStorage;
+  @appModule.State('sync') appSync: AppSync;
 
   visibleDrawer: boolean = false;
   visibleTool: boolean = true;
 
   async created() {
-    if (this.app_const.mobile) {
+    if (this.appSync.isMobile) {
       this.visibleDrawer = true;
       this.visibleTool = false;
     }
     window.addEventListener('load', async () => {
       try {
-        await this.login();
-        await this.setToken();
-      } catch (err) {
-        console.log(err);
-        this.$message.error(err.message);
-      }
-    });
-  }
-
-  async login() {
-    const { wAddress, chain } = await this.app_const.web3.getWeb3();
-    this.app_user.address = wAddress;
-    this.app_const.chain = chain;
-    this.$store.dispatch('app/addAvatar', wAddress);
-  }
-
-  async setToken() {
-    TOKEN_LIST.DEFAULT[this.app_const.chain].forEach(async (element: { address: any }) => {
-      try {
-        const address = COMMON.web3Utils.toChecksumAddress(element.address);
-        if (address == COMMON.web3Utils.ethAddress || (await this.app_const.web3.Erc20Func.balance(address, this.app_user.address)) != 0) {
-          const token = await this.$store.dispatch('app/getToken', address);
-          this.$set(this.app_load.tokenList, address, token);
-          this.app_user.tokens.push(address);
-          this.$store.dispatch('app/addBalance', [address, this.app_user.address]);
-        }
-      } catch (err) {
+        console.log('window load');
+        await this.$store.dispatch('app/start');
+        await this.$store.dispatch('chat/start');
+        // eslint-disable-next-line prettier/prettier
+      } catch (err:any) {
         console.log(err);
         this.$message.error(err.message);
       }

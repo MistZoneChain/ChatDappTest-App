@@ -2,12 +2,16 @@ import Vue from 'vue';
 import Vuex, { ModuleTree } from 'vuex';
 
 // app
-import app from './modules/app';
-import { AppState } from './modules/app/state';
+import app from './app';
+import { AppState } from './app/state';
 
 // chat
-import chat from './modules/chat';
-import { ChatState } from './modules/chat/state';
+import chat from './chat';
+import { ChatState } from './chat/state';
+
+export * from './app';
+
+export * from './chat';
 
 export type RootState = {
   app: AppState;

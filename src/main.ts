@@ -9,8 +9,21 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 import Viewer from 'v-viewer';
+import VueI18n from 'vue-i18n';
+import en from '@/const/locales/en';
+import cn from '@/const/locales/cn';
 
 Vue.config.productionTip = false;
+
+Vue.use(VueI18n);
+
+const i18n = new VueI18n({
+  locale: 'cn',
+  messages: {
+    cn, // 本地资源文件，我这里配2个语言，中文&英文，src下根据个人情况放置
+    en,
+  },
+});
 
 // 引入ant-desigin
 import './ant-desigin';
@@ -42,8 +55,4 @@ Vue.use(Viewer, {
   },
 });
 
-new Vue({
-  router,
-  store,
-  render: (h) => h(App),
-}).$mount('#app');
+new Vue({ i18n, router, store, render: (h) => h(App) }).$mount('#app');

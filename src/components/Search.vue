@@ -3,29 +3,42 @@
     <div class="search-select">
       <a-select
         show-search
-        placeholder="搜索"
+        :placeholder="$t('search.search')"
         :default-active-first-option="false"
         :show-arrow="false"
         :filter-option="false"
         :not-found-content="null"
         @search="handleSearch"
       >
-        <a-select-option v-for="(data, index) in searchData" :key="index" @click="selectChat(data.address)">
-          <div v-if="data.address" class="avatar">
-            <my-avatar :avatar="app_load.tokenList[data.address].logoURI" :canCheck="false"></my-avatar>
-            <span class="avatar-name">{{
-              app_load.tokenList[data.address].name +
-                ' (' +
-                COMMON.math.formatBalance(
-                  app_load.balances[data.address][app_user.address],
-                  app_load.tokenList[data.address].decimals,
-                  app_load.tokenList[data.address].symbol,
-                  app_user.decimals
-                ) +
-                ')'
-            }}</span>
+        <a-select-option :value="searchData.address">
+          <div v-if="searchData.type == 'erc20'" @click="selectChat(searchData.address)">
+            <div
+              v-if="
+                utils.have.value(appAsync.erc20DetailMap[searchData.address]) &&
+                  utils.have.value(appAsync.tokenBalanceMap[searchData.address][appSync.userAddress])
+              "
+              class="avatar"
+            >
+              <my-avatar :avatar="appAsync.erc20DetailMap[searchData.address].value.logoURI" :canCheck="false"></my-avatar>
+              <span class="avatar-name">{{
+                appAsync.erc20DetailMap[searchData.address].value.name +
+                  ' (' +
+                  utils.format.balance(
+                    appAsync.tokenBalanceMap[searchData.address][appSync.userAddress].value,
+                    appAsync.erc20DetailMap[searchData.address].value.decimals,
+                    appAsync.erc20DetailMap[searchData.address].value.symbol,
+                    appStorage.decimalLimit
+                  ) +
+                  ')'
+              }}</span>
+            </div>
           </div>
-          <div v-if="data.error">{{ data.message }}</div>
+          <div v-else-if="searchData.type == 'wallet'" class="avatar" @click="selectChat(searchData.address)">
+            <my-avatar :avatar="appSync.addressAvatarMap[searchData.address]" :canCheck="false"></my-avatar>
+            <span class="avatar-name">{{ searchData.address }}</span>
+          </div>
+          <div v-else-if="searchData.err">{{ searchData.err }}</div>
+          <div v-else @click="selectChat(searchData.address)">{{ $t('search.unknown_contract_address') }}</div>
         </a-select-option>
       </a-select>
     </div>
@@ -33,10 +46,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Watch } from 'vue-property-decorator';
+import { Component, Vue } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
 import MyAvatar from '@/components/Avatar.vue';
-import * as COMMON from '@/const/common';
+import { utils, etherUtils } from '@/const';
+import { AppStorage, AppSync, AppAsync, ChatSync } from '@/store';
 const chatModule = namespace('chat');
 const appModule = namespace('app');
 
@@ -46,40 +60,46 @@ const appModule = namespace('app');
   },
 })
 export default class MySearch extends Vue {
-  @appModule.State('user') app_user: any;
-  @appModule.State('load') app_load: any;
-  @appModule.State('const') app_const: any;
-  @chatModule.State('user') chat_user: any;
+  @appModule.State('storage') appStorage: AppStorage;
+  @appModule.State('sync') appSync: AppSync;
+  @appModule.State('async') appAsync: AppAsync;
+  @chatModule.State('sync') chatSync: ChatSync;
 
-  searchData: Array<any> = [];
-  COMMON: any = COMMON;
-
-  created() {}
+  searchData: { address?: string; type?: string; err?: string } = {};
+  utils = utils;
 
   async handleSearch(value: string) {
-    let mySearchData = [];
-    if (COMMON.web3Utils.isEthAddress(value)) {
+    if (etherUtils.isAddress(value)) {
       try {
-        const address = COMMON.web3Utils.toChecksumAddress(value);
-        const token = await this.$store.dispatch('app/getToken', address);
-        this.$set(this.app_load.tokenList, address, token);
-        await this.$store.dispatch('app/addBalance', [address, this.app_user.address]);
-        mySearchData.push({ token: true, address });
-      } catch (error) {
-        mySearchData.push({ error: true, message: error.message });
+        const address = etherUtils.getAddress(value);
+        const type = await this.$store.state.app.sync.ether.utils.getType(address);
+        if (type == 'erc20') {
+          await this.$store.dispatch('app/setTokenBalance', [address, this.appSync.userAddress]);
+          await this.$store.dispatch('app/setERC20Detail', address);
+        } else if (type == 'wallet') {
+          await this.$store.dispatch('app/setAddressAvatar', address);
+        }
+        this.searchData = {
+          address,
+          type,
+        };
+        // eslint-disable-next-line prettier/prettier
+      } catch (err:any) {
+        console.log(err);
+        this.searchData = {
+          err: err.message,
+        };
       }
     } else {
-      mySearchData.push({ error: true, message: '不是ETH地址' });
+      this.searchData = {
+        err: this.$t('search.not_ether_address').toString(),
+      };
     }
-    this.searchData = mySearchData;
   }
 
   async selectChat(address: string) {
-    if (this.app_user.tokens.indexOf(address) == -1) {
-      this.app_user.tokens.push(address);
-    }
-    this.chat_user.activeRoom = address;
-    this.searchData = [];
+    await this.$store.dispatch('chat/setUserActiveRecipient', address);
+    this.searchData = {};
   }
 }
 </script>
