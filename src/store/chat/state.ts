@@ -1,39 +1,43 @@
+import { BigNumberish, BytesLike } from "ethers";
+
 /*
  * @Author: 33357
  * @Date: 2021-02-26 16:13:39
  * @LastEditTime: 2021-03-02 21:06:42
  * @LastEditors: 33357
  */
-export interface ChatMessage {
-  messageId: number;
-  sender: string;
-  recipientArr: Array<string>;
-  content: string;
-  typeNumber: number;
-  createDate: Date;
-  decryptContent?: string;
+export enum chatStatus{
+  sending,
+  pending,
+  success,
+  error
 }
 
-export interface ChatSendMessage extends ChatMessage {
-  status: string;
+export interface ChatMessage {
+  messageId: BigNumberish;
+  sender: string;
+  recipient: BytesLike;
+  content: string;
+  createDate: BigNumberish;
+}
+
+export interface SendMessage extends ChatMessage {
+  status: chatStatus;
   hash: string;
 }
 
 export interface ChatRecipient {
-  messageIdLength: number;
-  publicKey: string;
-  messageIdArr: Array<number>;
+  messageLength: BigNumberish;
+  messageList: Array<BigNumberish>;
   readIndex: number;
-  sendMessageArr: Array<ChatSendMessage>;
-  type: string;
-  encrypt?: boolean;
+  sendMessageList: Array<SendMessage>;
 }
 
 export interface AsyncMessage {
   value: ChatMessage;
 }
 
-export interface ChatMessageMap {
+export interface MessageMap {
   [messageId: number]: AsyncMessage;
 }
 
@@ -41,17 +45,17 @@ export interface AsyncRecipient {
   value: ChatRecipient;
 }
 
-export interface ChatRecipientMap {
-  [recipientAddress: string]: AsyncRecipient;
+export interface RecipientMap {
+  [recipient: string]: AsyncRecipient;
 }
 
 export interface ChatSync {
-  userActiveRecipient: string;
+  activeRecipient: BytesLike;
 }
 
 export interface ChatAsync {
-  chatRecipientMap: ChatRecipientMap;
-  chatMessageMap: ChatMessageMap;
+  recipientMap: RecipientMap;
+  messageMap: MessageMap;
 }
 
 export interface ChatState {
@@ -61,11 +65,11 @@ export interface ChatState {
 
 const chatState: ChatState = {
   sync: {
-    userActiveRecipient: '',
+    activeRecipient: '',
   },
   async: {
-    chatRecipientMap: {},
-    chatMessageMap: {},
+    recipientMap: {},
+    messageMap: {},
   },
 };
 

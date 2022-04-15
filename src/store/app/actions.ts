@@ -62,56 +62,6 @@ const actions: ActionTree<AppState, RootState> = {
       Vue.set(state.sync.addressAvatarMap, address, utils.get.avatar(address));
     }
   },
-
-  async setTokenBalance({ state }, [tokenAddress, walletAddress]) {
-    if (!state.async.tokenBalanceMap[tokenAddress]) {
-      Vue.set(state.async.tokenBalanceMap, tokenAddress, {} as TokenBalanceMap);
-    }
-    if (!state.async.tokenBalanceMap[tokenAddress][walletAddress]) {
-      Vue.set(state.async.tokenBalanceMap[tokenAddress], walletAddress, {} as AsyncBalance);
-      let balance;
-      if (tokenAddress == common.etherAddress) {
-        balance = await state.sync.ether.metamask.getBalance(walletAddress);
-      } else {
-        balance = await state.sync.ether.getERC20(tokenAddress).balanceOf(walletAddress);
-      }
-      Vue.set(state.async.tokenBalanceMap[tokenAddress][walletAddress], 'value', balance);
-    }
-  },
-
-  async setERC20Detail({ state }, erc20Address: string) {
-    if (!state.async.erc20DetailMap[erc20Address]) {
-      const token = contractDetails[state.sync.ether.getNetwork()].erc20.find((token) => {
-        return token.address == erc20Address;
-      });
-      if (token) {
-        const erc20Detail: ERC20Detail = {
-          logoURI: token.logoURI ? token.logoURI : './static/token/empty-token.png',
-          name: token.name ? token.name : '',
-          symbol: token.symbol ? token.symbol : '',
-          decimals: token.decimals ? token.decimals : 18,
-          totalSupply: token.totalSupply ? token.totalSupply : BigNumber.from(0),
-        };
-        Vue.set(state.async.erc20DetailMap, erc20Address, { value: erc20Detail } as AsyncERC20Detail);
-      } else {
-        Vue.set(state.async.erc20DetailMap, erc20Address, {} as AsyncERC20Detail);
-      }
-      if (erc20Address != common.etherAddress) {
-        const erc20 = state.sync.ether.getERC20(erc20Address);
-        const res = await Promise.all([erc20.name(), erc20.symbol(), erc20.decimals(), erc20.totalSupply()]);
-        const erc20Detail: ERC20Detail = {
-          logoURI: state.async.erc20DetailMap[erc20Address].value.logoURI
-            ? state.async.erc20DetailMap[erc20Address].value.logoURI
-            : './static/token/empty-token.png',
-          name: res[0],
-          symbol: res[1],
-          decimals: res[2],
-          totalSupply: res[3],
-        };
-        Vue.set(state.async.erc20DetailMap[erc20Address], 'value', erc20Detail);
-      }
-    }
-  },
 };
 
 export default actions;

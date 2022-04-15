@@ -1,4 +1,4 @@
-import { ChatDAOClient, DeploymentInfo, ERC20Client, EtherChatDAOClient, EtherERC20Client, NETWORK } from 'chatdao-sdk';
+import { EtherBlockChatUpgradeableClient, DeploymentInfo, } from 'blockchat-contarct-sdk';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { ethers, Signer } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';
@@ -12,10 +12,10 @@ export class Ether {
   private _chainId: number | undefined;
   private _network: string | undefined;
   private _provider: Web3Provider | undefined;
-  private _chatDAO: ChatDAOClient | undefined;
+  private _blockchat: EtherBlockChatUpgradeableClient | undefined;
   private _ethereum: any;
 
-  constructor() {}
+  constructor() { }
 
   async load() {
     const provider: any = await detectEthereumProvider();
@@ -40,25 +40,8 @@ export class Ether {
         this._provider = new ethers.providers.Web3Provider(this._ethereum);
         this._singer = this._provider.getSigner();
         if (this._singer) {
+          this.setContracts();
           this._chainId = await this._singer.getChainId();
-          if (this._chainId != 0) {
-            let haveNetwork = false;
-            for (const i in NETWORK) {
-              if (NETWORK[i].networkId == this._chainId && DeploymentInfo[NETWORK[i].name]) {
-                this._network = NETWORK[i].name;
-                haveNetwork = true;
-                break;
-              }
-            }
-            if (!haveNetwork) {
-              throw new Error('Does not support the current blockchain network');
-            }
-            if (this._network) {
-              this.setContracts(this._network);
-            }
-          } else {
-            throw new Error('Does not support the current blockchain network');
-          }
         }
       }
     } else {
@@ -66,12 +49,12 @@ export class Ether {
     }
   }
 
-  setContracts(network: string) {
+  setContracts() {
     if (!this._singer) {
       throw new Error('no provider or singer');
     }
-    this._chatDAO = new EtherChatDAOClient();
-    this._chatDAO.connect(DeploymentInfo[network].chatDAO.proxyAddress, this._singer, 1);
+    this._blockchat = new EtherBlockChatUpgradeableClient();
+    this._blockchat.connect(this._singer, undefined, 1);
   }
 
   getSinger() {
@@ -88,20 +71,11 @@ export class Ether {
     return this._network;
   }
 
-  getChatDAO() {
-    if (!this._chatDAO) {
-      throw new Error('no chatDAO');
+  getBlockChat() {
+    if (!this._blockchat) {
+      throw new Error('no blockchat');
     }
-    return this._chatDAO;
-  }
-
-  getERC20(address: string): ERC20Client {
-    if (!this._provider || !this._singer) {
-      throw new Error('no provider or singer');
-    }
-    const erc20 = new EtherERC20Client();
-    erc20.connect(address, this._singer, 1);
-    return erc20;
+    return this._blockchat;
   }
 
   P2P = {
@@ -209,25 +183,25 @@ export class Ether {
   };
 
   utils = {
-    getType: async (address: string) => {
-      if (address == common.etherAddress) {
-        return 'erc20';
-      } else if (await this.metamask.isContract(address)) {
-        try {
-          const erc20 = this.getERC20(address);
-          if (await erc20.decimals()) {
-            return 'erc20';
-          } else if (await erc20.totalSupply()) {
-            return 'erc721';
-          }
-          return 'contract';
-        } catch (err) {
-          console.log(err);
-          return 'contract';
-        }
-      } else {
-        return 'wallet';
-      }
-    },
+    // getType: async (address: string) => {
+    //   if (address == common.etherAddress) {
+    //     return 'erc20';
+    //   } else if (await this.metamask.isContract(address)) {
+    //     try {
+    //       const erc20 = this.getERC20(address);
+    //       if (await erc20.decimals()) {
+    //         return 'erc20';
+    //       } else if (await erc20.totalSupply()) {
+    //         return 'erc721';
+    //       }
+    //       return 'contract';
+    //     } catch (err) {
+    //       console.log(err);
+    //       return 'contract';
+    //     }
+    //   } else {
+    //     return 'wallet';
+    //   }
+    // },
   };
 }
