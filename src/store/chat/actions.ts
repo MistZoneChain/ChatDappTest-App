@@ -4,7 +4,7 @@ import { common, BigNumber, contractDetails, utils, etherUtils } from '@/const';
 import Vue from 'vue';
 import { MessageCreatedEvent } from 'blockchat-contarct-sdk';
 import { MessageMap, ChatRecipient, RecipientMap } from '.';
-import { BytesLike } from 'ethers';
+import { BigNumberish, BytesLike } from 'ethers';
 
 const actions: ActionTree<ChatState, RootState> = {
   async start({ dispatch }) {
@@ -87,30 +87,20 @@ const actions: ActionTree<ChatState, RootState> = {
     }
   },
 
-  async setChatMessage({ state, rootState, dispatch }, messageId: number) {
+  async setChatMessage({ state, rootState, dispatch }, messageId: BigNumberish) {
     try {
-      if (!state.async.chatMessageMap[messageId]) {
-        Vue.set(state.async.chatMessageMap, messageId, {} as ChatMessageMap);
-        const message = await rootState.app.sync.ether.getChatDAO().getMessage(BigNumber.from(messageId));
+      if (!state.async.messageMap[messageId]) {
+        Vue.set(state.async.messageMap, messageId, {} as MessageMap);
+        const message = await rootState.app.sync.ether.getBlockChat().batchMessage(BigNumber.from(messageId));
         const chatMessage: ChatMessage = {
           messageId,
           sender: message.sender,
-          recipientArr: message.recipientArr,
+          recipient: message.recipient,
           content: message.content,
-          typeNumber: message.typeNumber.toNumber(),
-          createDate: new Date(message.createDate.toNumber() * 1000),
+          createDate: message.createDate,
         };
-        Vue.set(state.async.chatMessageMap[messageId], 'value', chatMessage);
+        Vue.set(state.async.messageMap[messageId], 'value', chatMessage);
         await dispatch('app/setAddressAvatar', chatMessage.sender, { root: true });
-        chatMessage.recipientArr.forEach(async (recipientAddress) => {
-          try {
-            if (state.async.chatRecipientMap[recipientAddress].value.type == 'erc20') {
-              await dispatch('app/setTokenBalance', [recipientAddress, chatMessage.sender], { root: true });
-            }
-          } catch (err) {
-            console.log(err);
-          }
-        });
       }
     } catch (err) {
       console.log(err);
@@ -125,8 +115,8 @@ const actions: ActionTree<ChatState, RootState> = {
   async listenChatMessage({ state, rootState }) {
     rootState.app.sync.ether.getBlockChat().listenMessage(async (event: MessageCreatedEvent) => {
       try {
-        if (state.async.chatRecipientMap[event.recipient] && state.async.chatRecipientMap[event.recipient].value) {
-          state.async.chatRecipientMap[event.recipient].value.messageIdArr.push(event.messageId.toNumber());
+        if (state.async.recipientMap[event.recipient.toString()] && state.async.recipientMap[event.recipient.toString()].value) {
+          state.async.recipientMap[event.recipient.toString()].value.messageList.push(event.messageId);
         }
       } catch (err) {
         console.log(err);
@@ -134,19 +124,19 @@ const actions: ActionTree<ChatState, RootState> = {
     });
   },
 
-  async deleteChatRecipient({ state, rootState, dispatch }, recipientAddress: string) {
-    const chatRecipients = Object.keys(state.async.chatRecipientMap);
+  async deleteChatRecipient({ state, rootState, dispatch }, recipient: BytesLike) {
+    const chatRecipients = Object.keys(state.async.recipientMap);
     if (chatRecipients.length != 1) {
-      const setIndex = rootState.app.storage.recipientMap.setArr.indexOf(recipientAddress);
+      const setIndex = rootState.app.storage.recipientMap.setArr.indexOf(recipient.toString());
       if (setIndex != -1) {
         rootState.app.storage.recipientMap.setArr.splice(setIndex, 1);
         Vue.set(rootState.app.storage.recipientMap, 'setArr', rootState.app.storage.recipientMap.setArr);
       }
-      const deleteIndex = rootState.app.storage.recipientMap.deleteArr.indexOf(recipientAddress);
+      const deleteIndex = rootState.app.storage.recipientMap.deleteArr.indexOf(recipient.toString());
       if (deleteIndex == -1) {
-        rootState.app.storage.recipientMap.deleteArr.push(recipientAddress);
+        rootState.app.storage.recipientMap.deleteArr.push(recipient.toString());
       }
-      const chatRecipientIndex = chatRecipients.indexOf(recipientAddress);
+      const chatRecipientIndex = chatRecipients.indexOf(recipient.toString());
       if (chatRecipientIndex != -1) {
         let userActiveRecipient;
         if (chatRecipientIndex == 0) {
@@ -154,27 +144,27 @@ const actions: ActionTree<ChatState, RootState> = {
         } else {
           userActiveRecipient = chatRecipients[chatRecipientIndex - 1];
         }
-        Vue.set(state.async.chatRecipientMap, recipientAddress, undefined);
-        delete state.async.chatRecipientMap[recipientAddress];
-        Vue.set(state.async, 'chatRecipientMap', state.async.chatRecipientMap);
+        Vue.set(state.async.recipientMap, recipient.toString(), undefined);
+        delete state.async.recipientMap[recipient.toString()];
+        Vue.set(state.async, 'chatRecipientMap', state.async.recipientMap);
         await dispatch('setUserActiveRecipient', userActiveRecipient);
       }
     }
   },
 
-  async setUserActiveRecipient({ state, rootState, dispatch }, recipientAddress: string) {
-    if (Object.keys(state.async.chatRecipientMap).indexOf(recipientAddress) == -1) {
-      if (rootState.app.storage.recipientMap.setArr.indexOf(recipientAddress) == -1) {
-        rootState.app.storage.recipientMap.setArr.push(recipientAddress);
+  async setUserActiveRecipient({ state, rootState, dispatch }, recipient: BytesLike) {
+    if (Object.keys(state.async.recipientMap).indexOf(recipient.toString()) == -1) {
+      if (rootState.app.storage.recipientMap.setArr.indexOf(recipient.toString()) == -1) {
+        rootState.app.storage.recipientMap.setArr.push(recipient.toString());
       }
-      const index = rootState.app.storage.recipientMap.deleteArr.indexOf(recipientAddress);
+      const index = rootState.app.storage.recipientMap.deleteArr.indexOf(recipient.toString());
       if (index != -1) {
         rootState.app.storage.recipientMap.deleteArr.splice(index, 1);
         Vue.set(rootState.app.storage.recipientMap, 'deleteArr', rootState.app.storage.recipientMap.deleteArr);
       }
-      await dispatch('setChatRecipient', recipientAddress);
+      await dispatch('setChatRecipient', recipient);
     }
-    state.sync.userActiveRecipient = recipientAddress;
+    state.sync.activeRecipient = recipient;
   },
 };
 
