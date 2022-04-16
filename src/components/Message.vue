@@ -2,9 +2,9 @@
   <div class="message">
     <div class="message-header">
       <div class="message-header-box">
-        <div v-if="utils.have.value(chatAsync.recipientMap[chatSync.activeRecipientHash])">
+        <div v-if="utils.have.value(chatAsync.recipientMap[chatSync.activeRecipientText])">
           <span class="message-header-text">
-            {{ chatSync.activeRecipientHash }}
+            {{ chatSync.activeRecipientText }}
           </span>
         </div>
       </div>
@@ -20,9 +20,9 @@
           <div
             class="message-content-noData"
             v-if="
-              utils.have.value(chatAsync.recipientMap[chatSync.activeRecipient]) &&
-              chatAsync.recipientMap[chatSync.activeRecipientHash].value.messageIdLength.toNumber() <=
-                chatAsync.recipientMap[chatSync.activeRecipientHash].value.messageIdLength.length
+              utils.have.value(chatAsync.recipientMap[chatSync.activeRecipientText]) &&
+              chatAsync.recipientMap[chatSync.activeRecipientText].value.messageIdLength.toNumber() <=
+                chatAsync.recipientMap[chatSync.activeRecipientText].value.messageIdLength.length
             "
           >
             {{ $t('message.no_more_message') }}
@@ -33,7 +33,7 @@
             <my-avatar
               :avatar="appSync.avatarMap[message.sender]"
               :name="message.sender"
-              :time="utils.format.date(message.createDate)"
+              :time="utils.format.date(message.createDate.toNumber())"
               :showName="utils.format.address(message.sender)"
               @goTo="utils.go.address(appSync.ether.getNetwork(), message.sender)"
             ></my-avatar>
@@ -102,18 +102,18 @@ export default class MyMessage extends Vue {
   status: string = 'load';
   messageList: Array<Message | SendMessage> = [];
 
-  @Watch('chatAsync.chatMessageMap', { deep: true })
-  changeChatMessageMap() {
-    this.setChatMessages();
+  @Watch('chatAsync.messageMap', { deep: true })
+  changeMessageMap() {
+    this.setMessageList();
   }
 
-  @Watch('chatAsync.chatRecipientMap', { deep: true })
-  changeChatRecipientMap() {
-    this.setChatMessages();
+  @Watch('chatAsync.recipientMap', { deep: true })
+  changeRecipientMap() {
+    this.setMessageList();
   }
 
-  @Watch('chatSync.userActiveRecipient')
-  changeUserActiveRecipient() {
+  @Watch('chatSync.activeRecipient')
+  changeActiveRecipient() {
     this.status = 'load';
     this.messageList = [];
     this.messageOpacity = 0;
@@ -123,10 +123,10 @@ export default class MyMessage extends Vue {
         this.headerDom.classList.remove('transition');
       }, 400);
     }
-    this.setChatMessages();
+    this.setMessageList();
   }
 
-  setChatMessages() {
+  setMessageList() {
     if (utils.have.value(this.chatAsync.recipientMap[this.chatSync.activeRecipientText])) {
       let messageList: Array<Message | SendMessage> = [];
       let messageIdList: Array<BigNumber> = [];
@@ -148,14 +148,14 @@ export default class MyMessage extends Vue {
           return message_a.createDate.toNumber() - message_b.createDate.toNumber();
         });
         this.messageList = messageList;
-        this.checkChatMessages();
+        this.checkMessageList();
       } else if (this.messageList.length == 0) {
-        this.checkChatMessages();
+        this.checkMessageList();
       }
     }
   }
 
-  checkChatMessages() {
+  checkMessageList() {
     let loadAll = this.messageList.length >= this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdList.length;
     if (this.status == 'get') {
       this.scrollTo();
@@ -183,12 +183,12 @@ export default class MyMessage extends Vue {
     if (event.currentTarget) {
       if (this.messageDom.scrollTop == 0 && this.status == 'listen') {
         this.lastMessagePosition = this.messageContentDom.offsetHeight;
-        this.getChatMessage();
+        this.getMessage();
       }
     }
   }
 
-  async getChatMessage() {
+  async getMessage() {
     if (
       this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdLength.toNumber() >
       this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdList.length

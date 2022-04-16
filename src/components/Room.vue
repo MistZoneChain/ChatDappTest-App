@@ -1,30 +1,26 @@
 <template>
   <div class="room">
-    <div v-for="(recipientHash, index) in recipientHashList" :key="index">
-      <div class="room-card" :class="{ active: chatSync.activeRecipient == recipientHash }" @click="setActiveRecipient(recipientHash)">
+    <div v-for="(recipientText, index) in recipientTextList" :key="index">
+      <div class="room-card" :class="{ active: chatSync.activeRecipientText == recipientText }" @click="setActiveRecipient(recipientText)">
         <a-badge class="room-card-badge" />
         <my-avatar
-          :avatar="appSync.avatarMap[recipientHash]"
-          :showName="recipientHash"
-          @goTo="
-            recipientHash == common.etherAddress
-              ? utils.go.accounts(appSync.ether.getNetwork())
-              : utils.go.token(appSync.ether.getNetwork(), recipientHash)
-          "
+          :avatar="appSync.avatarMap[chatAsync.recipientMap[recipientText].value.recipientHash]"
+          :showName="recipientText"
+          @goTo="''"
         ></my-avatar>
         <div class="room-card-message">
           <div class="room-card-name">
             <div>
-              {{ recipientHash }}
+              {{ recipientText }}
               <a-icon
                 type="close-circle-o"
                 class="room-card-close"
-                @click.stop="closeRecipient(recipientHash)"
-                v-if="recipientHashList.length > 1"
+                @click.stop="closeRecipient(recipientText)"
+                v-if="recipientTextList.length > 1"
               />
             </div>
             <div class="room-card-new">
-              <div v-if="utils.have.value(chatAsync.messageMap[utils.get.last(chatAsync.recipientMap[recipientHash].value.messageIdList)])">
+              <div v-if="utils.have.value(chatAsync.messageMap[utils.get.last(chatAsync.recipientMap[recipientText].value.messageIdList)])">
                 <div class="text" v-text="''"></div>
               </div>
             </div>
@@ -59,7 +55,7 @@ export default class MyRoom extends Vue {
 
   common = common;
   utils = utils;
-  recipientHashList: Array<string> = [];
+  recipientTextList: Array<string> = [];
 
   @Watch('chatAsync.recipientMap', { deep: true })
   changeRecipientMap() {
@@ -72,26 +68,26 @@ export default class MyRoom extends Vue {
   }
 
   setRecipient() {
-    let recipientHashList = Object.keys(this.chatAsync.recipientMap).filter((recipientHash) => {
-      return utils.have.value(this.chatAsync.recipientMap[recipientHash]);
+    let recipientTextList = Object.keys(this.chatAsync.recipientMap).filter((recipientText) => {
+      return utils.have.value(this.chatAsync.recipientMap[recipientText]);
     });
-    if (recipientHashList.length >= 2) {
-      recipientHashList = recipientHashList.sort((recipientHash_a, recipientHash_b) => {
+    if (recipientTextList.length >= 2) {
+      recipientTextList = recipientTextList.sort((recipientText_a, recipientText_b) => {
         if (
-          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientHash_a].value.messageIdList)]) &&
-          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientHash_b].value.messageIdList)])
+          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].value.messageIdList)]) &&
+          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].value.messageIdList)])
         ) {
           return (
             this.chatAsync.messageMap[
-              utils.get.last(this.chatAsync.recipientMap[recipientHash_b].value.messageIdList)
+              utils.get.last(this.chatAsync.recipientMap[recipientText_b].value.messageIdList)
             ].value.createDate.toNumber() -
             this.chatAsync.messageMap[
-              utils.get.last(this.chatAsync.recipientMap[recipientHash_a].value.messageIdList)
+              utils.get.last(this.chatAsync.recipientMap[recipientText_a].value.messageIdList)
             ].value.createDate.toNumber()
           );
         } else {
           if (
-            utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientHash_a].value.messageIdList)])
+            utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].value.messageIdList)])
           ) {
             return -1;
           }
@@ -99,17 +95,17 @@ export default class MyRoom extends Vue {
         }
       });
     }
-    if (this.recipientHashList.toString() != recipientHashList.toString()) {
-      this.recipientHashList = recipientHashList;
+    if (this.recipientTextList.toString() != recipientTextList.toString()) {
+      this.recipientTextList = recipientTextList;
     }
   }
 
-  async closeRecipient(recipientHash: string) {
-    await this.$store.dispatch('chat/deleteRecipient', recipientHash);
+  async closeRecipient(recipientText: string) {
+    await this.$store.dispatch('chat/deleteRecipient', recipientText);
   }
 
-  async setActiveRecipient(recipientHash: string) {
-    await this.$store.dispatch('chat/setActiveRecipient', recipientHash);
+  async setActiveRecipient(recipientText: string) {
+    await this.$store.dispatch('chat/setActiveRecipient', recipientText);
   }
 }
 </script>

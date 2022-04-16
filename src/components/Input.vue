@@ -18,19 +18,9 @@
       ref="messageInput"
       autoFocus
       style="color: #000"
-      @pressEnter="sendChatMessage"
+      @pressEnter="sendMessage"
     />
-    <myIcon
-      type="send"
-      :class="
-        utils.have.value(chatAsync.recipientMap[chatSync.activeRecipient])
-          ? chatAsync.recipientMap[chatSync.activeRecipient].value.encrypt
-            ? 'message-input-button2'
-            : 'message-input-button1'
-          : 'message-input-button1'
-      "
-      @click="sendChatMessage"
-    />
+    <myIcon type="send" :class="'message-input-button1'" @click="sendMessage" />
   </div>
 </template>
 
@@ -63,7 +53,7 @@ export default class MyInput extends Vue {
   /**
    * 消息发送前校验
    */
-  async sendChatMessage() {
+  async sendMessage() {
     try {
       if (!this.messageInput.trim()) {
         throw this.$t('input.cannot_send_empty_messages') as string;
@@ -72,33 +62,8 @@ export default class MyInput extends Vue {
         throw this.$t('input.message_is_too_long') as string;
       }
       const content = this.messageInput;
-      const message: SendMessage = {
-        status: SendMessageStatus.sending,
-        hash: '',
-        sender: this.appSync.userAddress,
-        recipient: this.chatSync.activeRecipientText,
-        content,
-        sendDate: new Date(),
-        createDate: BigNumber.from(0),
-      };
-      this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.sendMessageList.push(message);
       this.messageInput = '';
-      const messageId = await this.$store.dispatch('chat/sendMessage', [
-        [this.chatSync.activeRecipientText],
-        message.content,
-        (transaction: ContractTransaction) => {
-          this.$set(
-            utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.sendMessageList),
-            'hash',
-            transaction.hash
-          );
-          this.$set(
-            utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.sendMessageList),
-            'status',
-            'pending'
-          );
-        },
-      ]);
+      const messageId = await this.$store.dispatch('chat/sendMessage',content);
       this.$set(
         utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.sendMessageList),
         'messageId',

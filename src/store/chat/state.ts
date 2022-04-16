@@ -25,6 +25,7 @@ export interface SendMessage extends Message {
 export interface Recipient {
   messageIdLength: BigNumber;
   messageIdList: Array<BigNumber>;
+  recipientHash: string;
   readIndex: number;
   sendMessageList: Array<SendMessage>;
 }

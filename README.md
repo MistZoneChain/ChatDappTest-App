@@ -1,4 +1,4 @@
-# chatdao-app
+# blockchat-app
 
 ## Project setup
 ```
