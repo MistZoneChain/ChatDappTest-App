@@ -40,7 +40,7 @@ const actions: ActionTree<ChatState, RootState> = {
         messageIdLength: messageIdLength,
         messageIdList: [],
         readIndex: 0,
-        sendMessageIdList: [],
+        sendMessageList: [],
       };
       Vue.set(state.async.recipientMap[recipientHash], 'value', fullRecipient);
       await dispatch('getMessage', recipientHash);

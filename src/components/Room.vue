@@ -172,44 +172,44 @@ export default class MyRoom extends Vue {
 
   common = common;
   utils = utils;
-  chatRecipientArr: Array<string> = [];
+  recipientList: Array<string> = [];
 
-  @Watch('chatAsync.chatRecipientMap', { deep: true })
-  changeChatRecipientMap() {
-    this.setChatRecipient();
+  @Watch('chatAsync.recipientMap', { deep: true })
+  changeRecipientMap() {
+    this.setRecipient();
   }
 
-  @Watch('chatAsync.chatMessageMap', { deep: true })
-  changeChatMessageMap() {
-    this.setChatRecipient();
+  @Watch('chatAsync.messageMap', { deep: true })
+  changeMessageMap() {
+    this.setRecipient();
   }
 
-  setChatRecipient() {
-    let chatRecipientArr = Object.keys(this.chatAsync.chatRecipientMap).filter((recipientAddress) => {
-      return utils.have.value(this.chatAsync.chatRecipientMap[recipientAddress]);
+  setRecipient() {
+    let recipientList = Object.keys(this.chatAsync.recipientMap).filter((recipientHash) => {
+      return utils.have.value(this.chatAsync.recipientMap[recipientHash]);
     });
-    if (chatRecipientArr.length >= 2) {
-      chatRecipientArr = chatRecipientArr.sort((recipientAddress_a, recipientAddress_b) => {
+    if (recipientList.length >= 2) {
+      recipientList = recipientList.sort((recipientAddress_a, recipientAddress_b) => {
         if (
           utils.have.value(
-            this.chatAsync.chatMessageMap[utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_a].value.messageIdArr)]
+            this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientAddress_a].value.messageIdList)]
           ) &&
           utils.have.value(
-            this.chatAsync.chatMessageMap[utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_b].value.messageIdArr)]
+            this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientAddress_b].value.messageIdList)]
           )
         ) {
           return (
-            this.chatAsync.chatMessageMap[
-              utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_b].value.messageIdArr)
-            ].value.createDate.getTime() -
-            this.chatAsync.chatMessageMap[
-              utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_a].value.messageIdArr)
-            ].value.createDate.getTime()
+            this.chatAsync.messageMap[
+              utils.get.last(this.chatAsync.recipientMap[recipientAddress_b].value.messageIdList)
+            ].value.createDate.toNumber() -
+            this.chatAsync.messageMap[
+              utils.get.last(this.chatAsync.recipientMap[recipientAddress_a].value.messageIdList)
+            ].value.createDate.toNumber()
           );
         } else {
           if (
             utils.have.value(
-              this.chatAsync.chatMessageMap[utils.get.last(this.chatAsync.chatRecipientMap[recipientAddress_a].value.messageIdArr)]
+              this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientAddress_a].value.messageIdList)]
             )
           ) {
             return -1;
@@ -218,17 +218,17 @@ export default class MyRoom extends Vue {
         }
       });
     }
-    if (this.chatRecipientArr.toString() != chatRecipientArr.toString()) {
-      this.chatRecipientArr = chatRecipientArr;
+    if (this.recipientList.toString() != recipientList.toString()) {
+      this.recipientList = recipientList;
     }
   }
 
-  async closeChatRecipient(recipientAddress: string) {
-    await this.$store.dispatch('chat/deleteChatRecipient', recipientAddress);
+  async closeRecipient(recipientHash: string) {
+    await this.$store.dispatch('chat/deleteRecipient', recipientHash);
   }
 
-  async setUserActiveRecipient(recipientAddress: string) {
-    await this.$store.dispatch('chat/setUserActiveRecipient', recipientAddress);
+  async setActiveRecipient(recipientHash: string) {
+    await this.$store.dispatch('chat/setActiveRecipient', recipientHash);
   }
 }
 </script>

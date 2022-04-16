@@ -131,8 +131,8 @@ import { Component, Vue, Watch } from 'vue-property-decorator';
 import MyAvatar from '@/components/Avatar.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
-import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, ChatSendMessage, ChatMessage } from '@/store';
-import { utils, common } from '@/const';
+import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, Message } from '@/store';
+import { utils, common, BigNumber } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -160,7 +160,7 @@ export default class MyMessage extends Vue {
   lastMessagePosition: number = 0;
 
   chatStatus: string = 'load';
-  chatMessages: Array<ChatMessage | ChatSendMessage> = [];
+  messageList: Array<Message | SendMessage> = [];
 
   @Watch('chatAsync.chatMessageMap', { deep: true })
   changeChatMessageMap() {
@@ -175,7 +175,7 @@ export default class MyMessage extends Vue {
   @Watch('chatSync.userActiveRecipient')
   changeUserActiveRecipient() {
     this.chatStatus = 'load';
-    this.chatMessages = [];
+    this.messageList = [];
     this.messageOpacity = 0;
     if (this.headerDom) {
       this.headerDom.classList.add('transition');
@@ -187,36 +187,36 @@ export default class MyMessage extends Vue {
   }
 
   setChatMessages() {
-    if (utils.have.value(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient])) {
-      let chatMessages: Array<ChatMessage | ChatSendMessage> = [];
-      let chatMessageIds: Array<number> = [];
-      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr.forEach((sendMessage) => {
-        chatMessages.push(sendMessage);
-        if (sendMessage.messageId) {
-          chatMessageIds.push(sendMessage.messageId);
-        }
-      });
-      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.messageIdArr
+    if (utils.have.value(this.chatAsync.recipientMap[this.chatSync.activeRecipientHash])) {
+      let messageList: Array<Message | SendMessage> = [];
+      let messageIdList: Array<BigNumber> = [];
+      // this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.sendMessageIdList.forEach((sendMessageId) => {
+      //   chatMessages.push(sendMessage);
+      //   if (sendMessage.messageId) {
+      //     chatMessageIds.push(sendMessage.messageId);
+      //   }
+      // });
+      this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdList
         .filter((messageId) => {
-          return utils.have.value(this.chatAsync.chatMessageMap[messageId]) && chatMessageIds.indexOf(messageId) == -1;
+          return utils.have.value(this.chatAsync.messageMap[messageId.toString()]) && messageIdList.indexOf(messageId) == -1;
         })
         .forEach((messageId) => {
-          chatMessages.push(this.chatAsync.chatMessageMap[messageId].value);
+          messageList.push(this.chatAsync.messageMap[messageId.toString()].value);
         });
-      if (this.chatMessages.length != chatMessages.length) {
-        chatMessages = chatMessages.sort((chatMessage_a: ChatMessage, chatMessage_b: ChatMessage) => {
-          return chatMessage_a.createDate.getTime() - chatMessage_b.createDate.getTime();
+      if (this.messageList.length != messageList.length) {
+        messageList = messageList.sort((message_a: Message, message_b: Message) => {
+          return message_a.createDate.toNumber() - message_b.createDate.toNumber();
         });
-        this.chatMessages = chatMessages;
+        this.messageList = messageList;
         this.checkChatMessages();
-      } else if (this.chatMessages.length == 0) {
+      } else if (this.messageList.length == 0) {
         this.checkChatMessages();
       }
     }
   }
 
   checkChatMessages() {
-    let loadAll = this.chatMessages.length >= this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.messageIdArr.length;
+    let loadAll = this.messageList.length >= this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdList.length;
     if (this.chatStatus == 'get') {
       this.scrollTo();
       if (loadAll) {
@@ -248,25 +248,13 @@ export default class MyMessage extends Vue {
     }
   }
 
-  async changeChatRecipientEncrypt() {
-    if (this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.publicKey.length != 0) {
-      await this.$store.dispatch('chat/changeChatRecipientEncrypt');
-    } else {
-      await this.$store.dispatch('chat/updatePublicKey');
-    }
-  }
-
-  async decryptContent(messageId: number) {
-    await this.$store.dispatch('chat/decryptContent', messageId);
-  }
-
   async getChatMessage() {
     if (
-      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.messageIdLength >
-      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.messageIdArr.length
+      this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdLength.toNumber() >
+      this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdList.length
     ) {
       this.chatStatus = 'get';
-      await this.$store.dispatch('chat/getChatMessage', this.chatSync.userActiveRecipient);
+      await this.$store.dispatch('chat/getMessage', this.chatSync.activeRecipientHash);
     }
   }
 

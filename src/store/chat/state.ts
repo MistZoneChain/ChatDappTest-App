@@ -7,7 +7,9 @@ import { Message } from 'blockchat-contract-sdk';
  * @LastEditTime: 2021-03-02 21:06:42
  * @LastEditors: 33357
  */
-export enum status {
+export { Message } from 'blockchat-contract-sdk';
+
+export enum SendMessageStatus {
   sending,
   pending,
   success,
@@ -15,15 +17,16 @@ export enum status {
 }
 
 export interface SendMessage extends Message {
-  status: status;
+  status: SendMessageStatus;
   hash: string;
+  sendDate: Date;
 }
 
 export interface Recipient {
   messageIdLength: BigNumber;
   messageIdList: Array<BigNumber>;
   readIndex: number;
-  sendMessageIdList: Array<BigNumber>;
+  sendMessageList: Array<SendMessage>;
 }
 
 export interface AsyncMessage {

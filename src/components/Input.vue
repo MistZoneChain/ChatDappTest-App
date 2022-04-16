@@ -39,8 +39,8 @@ import { Component, Vue } from 'vue-property-decorator';
 import MyEmoji from '@/components/Emoji.vue';
 import { namespace } from 'vuex-class';
 import { ContractTransaction } from '@ethersproject/contracts';
-import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, ChatSendMessage } from '@/store';
-import { utils } from '@/const';
+import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, SendMessageStatus } from '@/store';
+import { BigNumber, log, utils } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -71,67 +71,44 @@ export default class MyInput extends Vue {
       if (this.messageInput.length > 220) {
         throw this.$t('input.message_is_too_long') as string;
       }
-      let content;
-      let message: ChatSendMessage;
-      if (this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.encrypt) {
-        content = await this.$store.dispatch('chat/encryptContent', this.messageInput);
-        message = {
-          status: 'send',
-          hash: '',
-          messageId: 0,
-          sender: this.appSync.userAddress,
-          recipientArr: [this.chatSync.userActiveRecipient],
-          content,
-          decryptContent: this.messageInput,
-          typeNumber: 1,
-          createDate: new Date(),
-        };
-      } else {
-        content = this.messageInput;
-        message = {
-          status: 'send',
-          hash: '',
-          messageId: 0,
-          sender: this.appSync.userAddress,
-          recipientArr: [this.chatSync.userActiveRecipient],
-          content,
-          typeNumber: 0,
-          createDate: new Date(),
-        };
-      }
-      this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr.push(message);
+      const content = this.messageInput;
+      const message: SendMessage = {
+        status: SendMessageStatus.sending,
+        hash: '',
+        sender: this.appSync.userAddress,
+        recipient: this.chatSync.activeRecipientHash,
+        content,
+        sendDate: new Date(),
+        createDate: BigNumber.from(0),
+      };
+      this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.sendMessageList.push(message);
       this.messageInput = '';
-      const messageId = await this.$store.dispatch('chat/sendChatMessage', [
-        [this.chatSync.userActiveRecipient],
+      const messageId = await this.$store.dispatch('chat/sendMessage', [
+        [this.chatSync.activeRecipientHash],
         message.content,
-        message.typeNumber,
         (transaction: ContractTransaction) => {
           this.$set(
-            utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr),
+            utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.sendMessageList),
             'hash',
             transaction.hash
           );
           this.$set(
-            utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr),
+            utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.sendMessageList),
             'status',
             'pending'
           );
         },
       ]);
       this.$set(
-        utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr),
+        utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.sendMessageList),
         'messageId',
         messageId
       );
-      this.$set(
-        utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr),
-        'status',
-        'success'
-      );
+      this.$set(utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.sendMessageList), 'status', 'success');
       // eslint-disable-next-line prettier/prettier
-    } catch (err:any) {
-      this.$set(utils.get.last(this.chatAsync.chatRecipientMap[this.chatSync.userActiveRecipient].value.sendMessageArr), 'status', 'error');
-      console.log(err);
+    } catch (err: any) {
+      this.$set(utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.sendMessageList), 'status', 'error');
+      log(err);
       this.$message.error(err.message);
     }
   }
