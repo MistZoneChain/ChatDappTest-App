@@ -2,44 +2,15 @@
   <div class="message">
     <div class="message-header">
       <div class="message-header-box">
-        <div v-if="utils.have.value(chatAsync.chatRecipientMap[chatSync.userActiveRecipient])">
-          <div v-if="chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.type == 'erc20'">
-            <span class="message-header-text">
-              <div v-if="utils.have.value(appAsync.erc20DetailMap[chatSync.userActiveRecipient])">
-                {{
-                  appAsync.erc20DetailMap[chatSync.userActiveRecipient].value.name +
-                    '(' +
-                    appAsync.erc20DetailMap[chatSync.userActiveRecipient].value.symbol +
-                    ') '
-                }}
-              </div>
-            </span>
-          </div>
-          <div v-if="chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.type == 'wallet'">
-            <span class="message-header-text">
-              {{ chatSync.userActiveRecipient }}
-            </span>
-            <myIcon
-              v-if="
-                chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.publicKey.length != 0 ||
-                  chatSync.userActiveRecipient == appSync.userAddress
-              "
-              :type="chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.encrypt ? 'lock' : 'unlock'"
-              :class="
-                chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.publicKey.length != 0
-                  ? chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.encrypt
-                    ? 'message-header-icon-red'
-                    : 'message-header-icon-blue'
-                  : 'message-header-icon-white-blue'
-              "
-              @click="changeChatRecipientEncrypt()"
-            />
-          </div>
+        <div v-if="utils.have.value(chatAsync.recipientMap[chatSync.activeRecipientHash])">
+          <span class="message-header-text">
+            {{ chatSync.activeRecipientHash }}
+          </span>
         </div>
       </div>
     </div>
     <transition name="loading">
-      <div class="message-loading" v-if="chatStatus == 'load' || chatStatus == 'get'">
+      <div class="message-loading" v-if="status == 'load' || status == 'get'">
         <a-icon type="sync" spin class="message-loading-icon" />
       </div>
     </transition>
@@ -49,74 +20,43 @@
           <div
             class="message-content-noData"
             v-if="
-              utils.have.value(chatAsync.chatRecipientMap[chatSync.userActiveRecipient]) &&
-                chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.messageIdLength <=
-                  chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.messageIdArr.length
+              utils.have.value(chatAsync.recipientMap[chatSync.activeRecipient]) &&
+              chatAsync.recipientMap[chatSync.activeRecipientHash].value.messageIdLength.toNumber() <=
+                chatAsync.recipientMap[chatSync.activeRecipientHash].value.messageIdLength.length
             "
           >
             {{ $t('message.no_more_message') }}
           </div>
         </transition>
-        <template v-for="(chatMessage, index) in chatMessages">
-          <div class="message-content-message" :key="index" :class="{ 'text-right': chatMessage.sender == appSync.userAddress }">
+        <template v-for="(message, index) in messageList">
+          <div class="message-content-message" :key="index" :class="{ 'text-right': message.sender == appSync.userAddress }">
             <my-avatar
-              v-if="
-                chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.type == 'erc20' &&
-                  utils.have.value(appAsync.tokenBalanceMap[chatSync.userActiveRecipient][chatMessage.sender]) &&
-                  utils.have.value(appAsync.erc20DetailMap[chatSync.userActiveRecipient])
-              "
-              :avatar="appSync.addressAvatarMap[chatMessage.sender]"
-              :name="
-                chatMessage.sender == appSync.userAddress
-                  ? ''
-                  : utils.format.balance(
-                      appAsync.tokenBalanceMap[chatSync.userActiveRecipient][chatMessage.sender].value,
-                      appAsync.erc20DetailMap[chatSync.userActiveRecipient].value.decimals,
-                      appAsync.erc20DetailMap[chatSync.userActiveRecipient].value.symbol,
-                      appStorage.decimalLimit
-                    )
-              "
-              :time="utils.format.date(chatMessage.createDate)"
-              :showName="utils.format.address(chatMessage.sender)"
-              @goTo="utils.go.address(appSync.ether.getNetwork(), chatMessage.sender)"
-            ></my-avatar>
-            <my-avatar
-              v-if="chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.type == 'wallet'"
-              :avatar="appSync.addressAvatarMap[chatMessage.sender]"
-              :name="''"
-              :time="utils.format.date(chatMessage.createDate)"
-              :showName="utils.format.address(chatMessage.sender)"
-              @goTo="utils.go.address(appSync.ether.getNetwork(), chatMessage.sender)"
+              :avatar="appSync.avatarMap[message.sender]"
+              :name="message.sender"
+              :time="utils.format.date(message.createDate)"
+              :showName="utils.format.address(message.sender)"
+              @goTo="utils.go.address(appSync.ether.getNetwork(), message.sender)"
             ></my-avatar>
 
-            <a-popover style="display:inline-block">
+            <a-popover style="display: inline-block">
               <div slot="content" class="avatar-card">
-                <a-icon type="loading" class="loading1-icon" v-if="chatMessage.status == 'send'" />
-                <a-icon type="loading" class="loading2-icon" v-if="chatMessage.status == 'pending'" />
-                <a-icon type="exclamation-circle" class="error-icon" v-if="chatMessage.status == 'error'" />
-                <a-icon type="check-circle" class="check-icon" v-if="chatMessage.status == 'success'" />
-                <div>{{ chatMessage.hash ? utils.format.hash(chatMessage.hash) : $t('message.not_send') }}</div>
-                <a-button @click="utils.go.tx(appSync.ether.getNetwork(), chatMessage.hash)" type="primary" :disabled="!chatMessage.hash">{{
+                <a-icon type="loading" class="loading1-icon" v-if="message.status == 'send'" />
+                <a-icon type="loading" class="loading2-icon" v-if="message.status == 'pending'" />
+                <a-icon type="exclamation-circle" class="error-icon" v-if="message.status == 'error'" />
+                <a-icon type="check-circle" class="check-icon" v-if="message.status == 'success'" />
+                <div>{{ message.hash ? utils.format.hash(message.hash) : $t('message.not_send') }}</div>
+                <a-button @click="utils.go.tx(appSync.ether.getNetwork(), message.hash)" type="primary" :disabled="!message.hash">{{
                   $t('message.view_on_the_blockchain_browser')
                 }}</a-button>
               </div>
-              <a-icon type="loading" class="loading1-icon" v-if="chatMessage.status == 'send'" />
-              <a-icon type="loading" class="loading2-icon" v-if="chatMessage.status == 'pending'" />
-              <a-icon type="exclamation-circle" class="error-icon" v-if="chatMessage.status == 'error'" />
-              <a-icon type="check-circle" class="check-icon" v-if="chatMessage.status == 'success'" />
+              <a-icon type="loading" class="loading1-icon" v-if="message.status == 'send'" />
+              <a-icon type="loading" class="loading2-icon" v-if="message.status == 'pending'" />
+              <a-icon type="exclamation-circle" class="error-icon" v-if="message.status == 'error'" />
+              <a-icon type="check-circle" class="check-icon" v-if="message.status == 'success'" />
             </a-popover>
-            <div v-if="chatMessage.typeNumber == 0" class="message-content-text">
-              <a v-if="utils.is.url(chatMessage.content)" :href="chatMessage.content" target="_blank">{{ chatMessage.content }} </a>
-              <div v-else v-text="chatMessage.content"></div>
-            </div>
-            <div v-else-if="chatMessage.typeNumber == 1" class="message-content-text">
-              <div v-if="chatMessage.decryptContent">
-                <a v-if="utils.is.url(chatMessage.decryptContent)" :href="chatMessage.decryptContent" target="_blank"
-                  >{{ chatMessage.decryptContent }}
-                </a>
-                <div v-else v-text="chatMessage.decryptContent"></div>
-              </div>
-              <div v-else v-text="$t('message.click_to_decrypt_message')" @click="decryptContent(chatMessage.messageId)"></div>
+            <div class="message-content-text">
+              <a v-if="utils.is.url(message.content)" :href="message.content" target="_blank">{{ message.content }} </a>
+              <div v-else v-text="message.content"></div>
             </div>
           </div>
         </template>
@@ -159,7 +99,7 @@ export default class MyMessage extends Vue {
   messageOpacity: number = 1;
   lastMessagePosition: number = 0;
 
-  chatStatus: string = 'load';
+  status: string = 'load';
   messageList: Array<Message | SendMessage> = [];
 
   @Watch('chatAsync.chatMessageMap', { deep: true })
@@ -174,7 +114,7 @@ export default class MyMessage extends Vue {
 
   @Watch('chatSync.userActiveRecipient')
   changeUserActiveRecipient() {
-    this.chatStatus = 'load';
+    this.status = 'load';
     this.messageList = [];
     this.messageOpacity = 0;
     if (this.headerDom) {
@@ -217,22 +157,22 @@ export default class MyMessage extends Vue {
 
   checkChatMessages() {
     let loadAll = this.messageList.length >= this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdList.length;
-    if (this.chatStatus == 'get') {
+    if (this.status == 'get') {
       this.scrollTo();
       if (loadAll) {
-        this.chatStatus = 'listen';
+        this.status = 'listen';
       }
-    } else if (this.chatStatus == 'load') {
+    } else if (this.status == 'load') {
       this.messageDom = document.getElementsByClassName('message-main')[0] as HTMLElement;
       this.messageContentDom = document.getElementsByClassName('message-content')[0] as HTMLElement;
       this.headerDom = document.getElementsByClassName('message-header-text')[0] as HTMLElement;
       this.messageDom.addEventListener('scroll', this.handleScroll);
       this.scrollToBottom();
       if (loadAll) {
-        this.chatStatus = 'listen';
+        this.status = 'listen';
       }
     } else if (
-      this.chatStatus == 'listen' &&
+      this.status == 'listen' &&
       this.messageDom.scrollTop + this.messageDom.offsetHeight + 100 > this.messageContentDom.scrollHeight
     ) {
       this.scrollToBottom();
@@ -241,7 +181,7 @@ export default class MyMessage extends Vue {
 
   handleScroll(event: Event) {
     if (event.currentTarget) {
-      if (this.messageDom.scrollTop == 0 && this.chatStatus == 'listen') {
+      if (this.messageDom.scrollTop == 0 && this.status == 'listen') {
         this.lastMessagePosition = this.messageContentDom.offsetHeight;
         this.getChatMessage();
       }
@@ -253,7 +193,7 @@ export default class MyMessage extends Vue {
       this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdLength.toNumber() >
       this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdList.length
     ) {
-      this.chatStatus = 'get';
+      this.status = 'get';
       await this.$store.dispatch('chat/getMessage', this.chatSync.activeRecipientHash);
     }
   }

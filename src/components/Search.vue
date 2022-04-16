@@ -13,10 +13,6 @@
         <a-select-option :value="searchData.address">
           <div v-if="searchData.type == 'erc20'" @click="selectChat(searchData.address)">
             <div
-              v-if="
-                utils.have.value(appAsync.erc20DetailMap[searchData.address]) &&
-                  utils.have.value(appAsync.tokenBalanceMap[searchData.address][appSync.userAddress])
-              "
               class="avatar"
             >
               <my-avatar :avatar="appAsync.erc20DetailMap[searchData.address].value.logoURI" :canCheck="false"></my-avatar>

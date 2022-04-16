@@ -2,7 +2,7 @@
   <div class="tool">
     <div class="tool-avatar">
       <div class="tool-avatar-img" @click="showUserModal = true">
-        <img v-if="appSync.addressAvatarMap[appSync.userAddress]" :src="appSync.addressAvatarMap[appSync.userAddress]" alt="" />
+        <img v-if="appSync.avatarMap[appSync.userAddress]" :src="appSync.avatarMap[appSync.userAddress]" alt="" />
       </div>
       <div class="tool-avatar-name">{{ appSync.userAddress }}</div>
     </div>
@@ -13,8 +13,8 @@
 
     <a-modal :title="$t('tool.user_info')" :visible="showUserModal" footer="" @cancel="showUserModal = false">
       <div class="tool-user">
-        <div class="tool-user-avatar" v-if="appSync.addressAvatarMap[appSync.userAddress]">
-          <a-avatar :src="appSync.addressAvatarMap[appSync.userAddress]" class="img" :size="120"></a-avatar>
+        <div class="tool-user-avatar" v-if="appSync.avatarMap[appSync.userAddress]">
+          <a-avatar :src="appSync.avatarMap[appSync.userAddress]" class="img" :size="120"></a-avatar>
         </div>
         <div class="tool-user-info">
           <div class="tool-user-title">{{ $t('tool.user_address') }}</div>

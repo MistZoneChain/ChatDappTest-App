@@ -1,144 +1,31 @@
 <template>
   <div class="room">
-    <div v-for="(recipientAddress, index) in chatRecipientArr" :key="index">
-      <div
-        class="room-card"
-        :class="{ active: chatSync.userActiveRecipient == recipientAddress }"
-        @click="setUserActiveRecipient(recipientAddress)"
-      >
+    <div v-for="(recipientHash, index) in recipientHashList" :key="index">
+      <div class="room-card" :class="{ active: chatSync.activeRecipient == recipientHash }" @click="setActiveRecipient(recipientHash)">
         <a-badge class="room-card-badge" />
         <my-avatar
-          v-if="chatAsync.chatRecipientMap[recipientAddress].value.type == 'wallet'"
-          :avatar="appSync.addressAvatarMap[recipientAddress]"
-          :showName="utils.format.address(recipientAddress)"
+          :avatar="appSync.avatarMap[recipientHash]"
+          :showName="recipientHash"
           @goTo="
-            recipientAddress == common.etherAddress
+            recipientHash == common.etherAddress
               ? utils.go.accounts(appSync.ether.getNetwork())
-              : utils.go.token(appSync.ether.getNetwork(), recipientAddress)
+              : utils.go.token(appSync.ether.getNetwork(), recipientHash)
           "
         ></my-avatar>
-        <my-avatar
-          v-else-if="
-            chatAsync.chatRecipientMap[recipientAddress].value.type == 'erc20' &&
-              utils.have.value(appAsync.erc20DetailMap[recipientAddress])
-          "
-          :avatar="appAsync.erc20DetailMap[recipientAddress].value.logoURI"
-          :showName="utils.format.address(recipientAddress)"
-          @goTo="
-            recipientAddress == common.etherAddress
-              ? utils.go.accounts(appSync.ether.getNetwork())
-              : utils.go.token(appSync.ether.getNetwork(), recipientAddress)
-          "
-        ></my-avatar>
-
         <div class="room-card-message">
           <div class="room-card-name">
-            <div
-              v-if="
-                chatAsync.chatRecipientMap[recipientAddress].value.type == 'erc20' &&
-                  utils.have.value(appAsync.erc20DetailMap[recipientAddress]) &&
-                  utils.have.value(appAsync.tokenBalanceMap[recipientAddress][appSync.userAddress])
-              "
-            >
-              {{
-                appAsync.erc20DetailMap[recipientAddress].value.symbol +
-                  ' (' +
-                  utils.format.balance(
-                    appAsync.tokenBalanceMap[recipientAddress][appSync.userAddress].value,
-                    appAsync.erc20DetailMap[recipientAddress].value.decimals,
-                    appAsync.erc20DetailMap[recipientAddress].value.symbol,
-                    appStorage.decimalLimit
-                  ) +
-                  ')'
-              }}
+            <div>
+              {{ recipientHash }}
               <a-icon
                 type="close-circle-o"
                 class="room-card-close"
-                @click.stop="closeChatRecipient(recipientAddress)"
-                v-if="chatRecipientArr.length > 1"
+                @click.stop="closeRecipient(recipientHash)"
+                v-if="recipientHashList.length > 1"
               />
             </div>
-            <div v-else-if="chatAsync.chatRecipientMap[recipientAddress].value.type == 'wallet'">
-              {{ recipientAddress == chatSync.userAddress ? 'self' : utils.format.address(recipientAddress) }}
-              <a-icon
-                type="close-circle-o"
-                class="room-card-close"
-                @click.stop="closeChatRecipient(recipientAddress)"
-                v-if="chatRecipientArr.length > 1"
-              />
-            </div>
-          </div>
-          <div class="room-card-new">
-            <div
-              v-if="
-                utils.have.value(chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)])
-              "
-            >
-              <div
-                v-if="
-                  chatAsync.chatRecipientMap[recipientAddress].value.type == 'erc20' &&
-                    utils.have.value(
-                      appAsync.tokenBalanceMap[recipientAddress][
-                        chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
-                          .sender
-                      ]
-                    ) &&
-                    utils.have.value(appAsync.erc20DetailMap[recipientAddress])
-                "
-                class="text"
-                v-text="
-                  '[' +
-                    utils.format.balance(
-                      appAsync.tokenBalanceMap[recipientAddress][
-                        chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
-                          .sender
-                      ].value,
-                      appAsync.erc20DetailMap[recipientAddress].value.decimals,
-                      appAsync.erc20DetailMap[recipientAddress].value.symbol,
-                      appStorage.decimalLimit
-                    ) +
-                    ']：' +
-                    chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value.content
-                "
-              ></div>
-              <div v-else-if="chatAsync.chatRecipientMap[recipientAddress].value.type == 'wallet'">
-                <div
-                  v-if="
-                    chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
-                      .typeNumber == 0
-                  "
-                  class="text"
-                  v-text="
-                    '[' +
-                      utils.format.address(
-                        chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
-                          .sender
-                      ) +
-                      ']：' +
-                      chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
-                        .content
-                  "
-                ></div>
-                <div
-                  v-else-if="
-                    chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
-                      .typeNumber == 1
-                  "
-                  class="text"
-                  v-text="
-                    '[' +
-                      utils.format.address(
-                        chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
-                          .sender
-                      ) +
-                      ']：' +
-                      (chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
-                        .decryptContent
-                        ? chatAsync.chatMessageMap[utils.get.last(chatAsync.chatRecipientMap[recipientAddress].value.messageIdArr)].value
-                            .decryptContent
-                        : '加密消息')
-                  "
-                ></div>
+            <div class="room-card-new">
+              <div v-if="utils.have.value(chatAsync.messageMap[utils.get.last(chatAsync.recipientMap[recipientHash].value.messageIdList)])">
+                <div class="text" v-text="''"></div>
               </div>
             </div>
           </div>
@@ -172,7 +59,7 @@ export default class MyRoom extends Vue {
 
   common = common;
   utils = utils;
-  recipientList: Array<string> = [];
+  recipientHashList: Array<string> = [];
 
   @Watch('chatAsync.recipientMap', { deep: true })
   changeRecipientMap() {
@@ -185,32 +72,26 @@ export default class MyRoom extends Vue {
   }
 
   setRecipient() {
-    let recipientList = Object.keys(this.chatAsync.recipientMap).filter((recipientHash) => {
+    let recipientHashList = Object.keys(this.chatAsync.recipientMap).filter((recipientHash) => {
       return utils.have.value(this.chatAsync.recipientMap[recipientHash]);
     });
-    if (recipientList.length >= 2) {
-      recipientList = recipientList.sort((recipientAddress_a, recipientAddress_b) => {
+    if (recipientHashList.length >= 2) {
+      recipientHashList = recipientHashList.sort((recipientHash_a, recipientHash_b) => {
         if (
-          utils.have.value(
-            this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientAddress_a].value.messageIdList)]
-          ) &&
-          utils.have.value(
-            this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientAddress_b].value.messageIdList)]
-          )
+          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientHash_a].value.messageIdList)]) &&
+          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientHash_b].value.messageIdList)])
         ) {
           return (
             this.chatAsync.messageMap[
-              utils.get.last(this.chatAsync.recipientMap[recipientAddress_b].value.messageIdList)
+              utils.get.last(this.chatAsync.recipientMap[recipientHash_b].value.messageIdList)
             ].value.createDate.toNumber() -
             this.chatAsync.messageMap[
-              utils.get.last(this.chatAsync.recipientMap[recipientAddress_a].value.messageIdList)
+              utils.get.last(this.chatAsync.recipientMap[recipientHash_a].value.messageIdList)
             ].value.createDate.toNumber()
           );
         } else {
           if (
-            utils.have.value(
-              this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientAddress_a].value.messageIdList)]
-            )
+            utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientHash_a].value.messageIdList)])
           ) {
             return -1;
           }
@@ -218,8 +99,8 @@ export default class MyRoom extends Vue {
         }
       });
     }
-    if (this.recipientList.toString() != recipientList.toString()) {
-      this.recipientList = recipientList;
+    if (this.recipientHashList.toString() != recipientHashList.toString()) {
+      this.recipientHashList = recipientHashList;
     }
   }
 

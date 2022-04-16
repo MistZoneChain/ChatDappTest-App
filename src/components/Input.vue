@@ -23,8 +23,8 @@
     <myIcon
       type="send"
       :class="
-        utils.have.value(chatAsync.chatRecipientMap[chatSync.userActiveRecipient])
-          ? chatAsync.chatRecipientMap[chatSync.userActiveRecipient].value.encrypt
+        utils.have.value(chatAsync.recipientMap[chatSync.activeRecipient])
+          ? chatAsync.recipientMap[chatSync.activeRecipient].value.encrypt
             ? 'message-input-button2'
             : 'message-input-button1'
           : 'message-input-button1'
