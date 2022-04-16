@@ -1,4 +1,5 @@
-import { BigNumberish, BytesLike } from "ethers";
+import { BigNumber } from "ethers";
+import { Message } from 'blockchat-contract-sdk';
 
 /*
  * @Author: 33357
@@ -6,43 +7,35 @@ import { BigNumberish, BytesLike } from "ethers";
  * @LastEditTime: 2021-03-02 21:06:42
  * @LastEditors: 33357
  */
-export enum chatStatus{
+export enum status {
   sending,
   pending,
   success,
   error
 }
 
-export interface ChatMessage {
-  messageId: BigNumberish;
-  sender: string;
-  recipient: BytesLike;
-  content: string;
-  createDate: BigNumberish;
-}
-
-export interface SendMessage extends ChatMessage {
-  status: chatStatus;
+export interface SendMessage extends Message {
+  status: status;
   hash: string;
 }
 
-export interface ChatRecipient {
-  messageLength: BigNumberish;
-  messageList: Array<BigNumberish>;
+export interface Recipient {
+  messageLength: BigNumber;
+  messageIdList: Array<BigNumber>;
   readIndex: number;
-  sendMessageList: Array<SendMessage>;
+  sendMessageIdList: Array<BigNumber>;
 }
 
 export interface AsyncMessage {
-  value: ChatMessage;
+  value: Message;
 }
 
 export interface MessageMap {
-  [messageId: number]: AsyncMessage;
+  [messageId: string]: AsyncMessage;
 }
 
 export interface AsyncRecipient {
-  value: ChatRecipient;
+  value: Recipient;
 }
 
 export interface RecipientMap {
@@ -50,7 +43,7 @@ export interface RecipientMap {
 }
 
 export interface ChatSync {
-  activeRecipient: BytesLike;
+  activeRecipientHash: string;
 }
 
 export interface ChatAsync {
@@ -65,7 +58,7 @@ export interface ChatState {
 
 const chatState: ChatState = {
   sync: {
-    activeRecipient: '',
+    activeRecipientHash: '',
   },
   async: {
     recipientMap: {},

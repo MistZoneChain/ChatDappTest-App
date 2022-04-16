@@ -1,4 +1,4 @@
-import { EtherBlockChatUpgradeableClient, DeploymentInfo, } from 'blockchat-contarct-sdk';
+import { EtherBlockChatUpgradeableClient, DeploymentInfo, } from 'blockchat-contract-sdk';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { ethers, Signer } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';

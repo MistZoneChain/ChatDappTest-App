@@ -6,8 +6,8 @@
  */
 import { ActionTree } from 'vuex';
 import Vue from 'vue';
-import { RootState, AppState, TokenBalanceMap, ERC20Detail, AsyncBalance, AsyncERC20Detail } from '../index';
-import { common, contractDetails, BigNumber, utils } from '@/const';
+import { RootState, AppState, BalanceMap, AsyncBalance } from '../index';
+import { common, BigNumber, utils } from '@/const';
 import { Ether } from '@/api';
 
 const actions: ActionTree<AppState, RootState> = {
@@ -52,14 +52,11 @@ const actions: ActionTree<AppState, RootState> = {
     if (state.storage.background.length == 0) {
       state.storage.background = common.backgrounds[0].url;
     }
-    if (state.storage.recipientMap.deleteArr.indexOf(state.sync.userAddress) == -1) {
-      state.storage.recipientMap.setArr.push(state.sync.userAddress);
-    }
   },
 
   async setAddressAvatar({ state }, address: string) {
-    if (!state.sync.addressAvatarMap[address]) {
-      Vue.set(state.sync.addressAvatarMap, address, utils.get.avatar(address));
+    if (!state.sync.avatarMap[address]) {
+      Vue.set(state.sync.avatarMap, address, utils.get.avatar(address));
     }
   },
 };

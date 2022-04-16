@@ -5,51 +5,31 @@
  * @LastEditors: 33357
  */
 import { Ether } from '@/api';
-import { BigNumber } from '@/const';
-
-export interface ERC20Detail {
-  logoURI: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-  totalSupply: BigNumber;
-}
-
-export interface AsyncBalance {
-  value: BigNumber;
-}
-
-export interface TokenBalanceMap {
-  [tokenAddress: string]: {
-    [walletAddress: string]: AsyncBalance;
-  };
-}
-
-export interface ERC20DetailMap {
-  [tokenAddress: string]: AsyncERC20Detail;
-}
-
-export interface AsyncERC20Detail {
-  value: ERC20Detail;
-}
 
 export interface AppStorage {
-  recipientMap: { setArr: Array<string>; deleteArr: Array<string>; encryptArr: Array<string>; encryptPrivateKeyArr: Array<string> };
+  recipientHashList: Array<string>;
   background: string;
   decimalLimit: number;
-  skipLimit: number;
+  messageLimit: number;
 }
 
 export interface AppSync {
   userAddress: string;
   isMobile: boolean;
-  addressAvatarMap: { [address: string]: string };
+  avatarMap: { [address: string]: string };
   ether: Ether;
 }
 
 export interface AppAsync {
-  tokenBalanceMap: TokenBalanceMap;
-  erc20DetailMap: ERC20DetailMap;
+  balanceMap: BalanceMap;
+}
+
+export interface AsyncBalance {
+  value: number;
+}
+
+export interface BalanceMap {
+  [walletAddress: string]: AsyncBalance;
 }
 
 export interface AppState {
@@ -60,25 +40,19 @@ export interface AppState {
 
 const appState: AppState = {
   storage: {
-    recipientMap: {
-      setArr: [],
-      deleteArr: [],
-      encryptArr: [],
-      encryptPrivateKeyArr: [],
-    },
+    recipientHashList:[],
     background: '',
     decimalLimit: 5,
-    skipLimit: 20,
+    messageLimit: 20,
   },
   sync: {
     userAddress: '',
     isMobile: false,
-    addressAvatarMap: {},
+    avatarMap: {},
     ether: new Ether(),
   },
   async: {
-    tokenBalanceMap: {},
-    erc20DetailMap: {},
+    balanceMap: {},
   },
 };
 
