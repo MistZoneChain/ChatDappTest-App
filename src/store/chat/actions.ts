@@ -18,37 +18,37 @@ const actions: ActionTree<ChatState, RootState> = {
   },
 
   async setSync({ state, dispatch }) {
-    state.sync.activeRecipientHash = common.etherAddress;
+    state.sync.activeRecipientText = common.etherAddress;
     await dispatch('listenMessage');
   },
 
   async watchAsync({ rootState, dispatch }) {
-    rootState.app.storage.recipientHashList.forEach(async (recipientHash: string) => {
+    rootState.app.storage.recipientTextList.forEach(async (recipientText: string) => {
       try {
-        await dispatch('setRecipient', recipientHash);
+        await dispatch('setRecipient', recipientText);
       } catch (err) {
         log(err);
       }
     });
   },
 
-  async setRecipient({ state, rootState, dispatch }, recipientHash: string) {
-    if (!state.async.recipientMap[recipientHash]) {
-      Vue.set(state.async.recipientMap, recipientHash, {});
-      const messageIdLength = await rootState.app.sync.ether.getBlockChat().getRecipientMessageListLength(recipientHash);
+  async setRecipient({ state, rootState, dispatch }, recipientText: string) {
+    if (!state.async.recipientMap[recipientText]) {
+      Vue.set(state.async.recipientMap, recipientText, {});
+      const messageIdLength = await rootState.app.sync.ether.getBlockChat().getRecipientMessageListLength(recipientText);
       const fullRecipient: Recipient = {
         messageIdLength: messageIdLength,
         messageIdList: [],
         readIndex: 0,
         sendMessageList: [],
       };
-      Vue.set(state.async.recipientMap[recipientHash], 'value', fullRecipient);
-      await dispatch('getMessage', recipientHash);
+      Vue.set(state.async.recipientMap[recipientText], 'value', fullRecipient);
+      await dispatch('getMessage', recipientText);
     }
   },
 
-  async getMessage({ state, rootState, dispatch }, recipientHash: string) {
-    const recipient = state.async.recipientMap[recipientHash].value;
+  async getMessage({ state, rootState, dispatch }, recipientText: string) {
+    const recipient = state.async.recipientMap[recipientText].value;
     let getIndex = recipient.messageIdLength.toNumber() - recipient.messageIdList.length;
     let getLength = rootState.app.storage.messageLimit;
     if (getIndex < getLength) {
@@ -58,7 +58,7 @@ const actions: ActionTree<ChatState, RootState> = {
       getIndex -= getLength;
     }
     if (getLength != 0) {
-      const messageIds = await rootState.app.sync.ether.getBlockChat().batchRecipientMessageId(recipientHash, getIndex, getLength);
+      const messageIds = await rootState.app.sync.ether.getBlockChat().batchRecipientMessageId(recipientText, getIndex, getLength);
       recipient.messageIdList.push(...messageIds);
       dispatch('setMessage', recipient.messageIdList);
     }
@@ -85,8 +85,8 @@ const actions: ActionTree<ChatState, RootState> = {
     }
   },
 
-  async sendMessage({ rootState }, [recipient, content, callback]) {
-    const message = await rootState.app.sync.ether.getBlockChat().createMessage(recipient, content, {}, callback);
+  async sendMessage({ rootState }, [recipientHash, content, callback]) {
+    const message = await rootState.app.sync.ether.getBlockChat().createMessage(recipientHash, content, {}, callback);
     return message;
   },
 
@@ -102,29 +102,29 @@ const actions: ActionTree<ChatState, RootState> = {
     });
   },
 
-  async deleteRecipient({ state, rootState, dispatch }, recipientHash: string) {
-    const index = rootState.app.storage.recipientHashList.indexOf(recipientHash);
+  async deleteRecipient({ state, rootState, dispatch }, recipientText: string) {
+    const index = rootState.app.storage.recipientTextList.indexOf(recipientText);
     if (index != -1) {
-      if (state.sync.activeRecipientHash == recipientHash) {
-        if (rootState.app.storage.recipientHashList.length > 1) {
-          await dispatch('setActiveRecipient', rootState.app.storage.recipientHashList[index == 0 ? index + 1 : index - 1]);
+      if (state.sync.activeRecipientText == recipientText) {
+        if (rootState.app.storage.recipientTextList.length > 1) {
+          await dispatch('setActiveRecipient', rootState.app.storage.recipientTextList[index == 0 ? index + 1 : index - 1]);
         } else {
           await dispatch('setActiveRecipient', '');
         }
       }
-      rootState.app.storage.recipientHashList.splice(index, 1);
+      rootState.app.storage.recipientTextList.splice(index, 1);
       //Vue.set(rootState.app.storage, 'recipientHashList', rootState.app.storage.recipientHashList);
     }
   },
 
-  async setActiveRecipient({ state, rootState, dispatch }, recipientHash: string) {
-    if (Object.keys(state.async.recipientMap).indexOf(recipientHash) == -1) {
-      if (rootState.app.storage.recipientHashList.indexOf(recipientHash) == -1) {
-        rootState.app.storage.recipientHashList.push(recipientHash);
+  async setActiveRecipient({ state, rootState, dispatch }, recipientText: string) {
+    if (Object.keys(state.async.recipientMap).indexOf(recipientText) == -1) {
+      if (rootState.app.storage.recipientTextList.indexOf(recipientText) == -1) {
+        rootState.app.storage.recipientTextList.push(recipientText);
       }
-      await dispatch('setRecipient', recipientHash);
+      await dispatch('setRecipient', recipientText);
     }
-    state.sync.activeRecipientHash = recipientHash;
+    state.sync.activeRecipientText = recipientText;
   },
 };
 

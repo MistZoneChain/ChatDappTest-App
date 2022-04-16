@@ -127,7 +127,7 @@ export default class MyMessage extends Vue {
   }
 
   setChatMessages() {
-    if (utils.have.value(this.chatAsync.recipientMap[this.chatSync.activeRecipientHash])) {
+    if (utils.have.value(this.chatAsync.recipientMap[this.chatSync.activeRecipientText])) {
       let messageList: Array<Message | SendMessage> = [];
       let messageIdList: Array<BigNumber> = [];
       // this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.sendMessageIdList.forEach((sendMessageId) => {
@@ -136,7 +136,7 @@ export default class MyMessage extends Vue {
       //     chatMessageIds.push(sendMessage.messageId);
       //   }
       // });
-      this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdList
+      this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdList
         .filter((messageId) => {
           return utils.have.value(this.chatAsync.messageMap[messageId.toString()]) && messageIdList.indexOf(messageId) == -1;
         })
@@ -156,7 +156,7 @@ export default class MyMessage extends Vue {
   }
 
   checkChatMessages() {
-    let loadAll = this.messageList.length >= this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdList.length;
+    let loadAll = this.messageList.length >= this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdList.length;
     if (this.status == 'get') {
       this.scrollTo();
       if (loadAll) {
@@ -190,11 +190,11 @@ export default class MyMessage extends Vue {
 
   async getChatMessage() {
     if (
-      this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdLength.toNumber() >
-      this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.messageIdList.length
+      this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdLength.toNumber() >
+      this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdList.length
     ) {
       this.status = 'get';
-      await this.$store.dispatch('chat/getMessage', this.chatSync.activeRecipientHash);
+      await this.$store.dispatch('chat/getMessage', this.chatSync.activeRecipientText);
     }
   }
 

@@ -7,7 +7,7 @@
 import { Ether } from '@/api';
 
 export interface AppStorage {
-  recipientHashList: Array<string>;
+  recipientTextList: Array<string>;
   background: string;
   decimalLimit: number;
   messageLimit: number;
@@ -40,7 +40,7 @@ export interface AppState {
 
 const appState: AppState = {
   storage: {
-    recipientHashList: [],
+    recipientTextList: [],
     background: '',
     decimalLimit: 5,
     messageLimit: 20,

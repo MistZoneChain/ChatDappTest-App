@@ -42,11 +42,11 @@ export interface AsyncRecipient {
 }
 
 export interface RecipientMap {
-  [recipientHash: string]: AsyncRecipient;
+  [recipientText: string]: AsyncRecipient;
 }
 
 export interface ChatSync {
-  activeRecipientHash: string;
+  activeRecipientText: string;
 }
 
 export interface ChatAsync {
@@ -61,7 +61,7 @@ export interface ChatState {
 
 const chatState: ChatState = {
   sync: {
-    activeRecipientHash: '',
+    activeRecipientText: '',
   },
   async: {
     recipientMap: {},
