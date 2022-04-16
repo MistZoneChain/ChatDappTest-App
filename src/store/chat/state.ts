@@ -1,4 +1,4 @@
-import { BigNumber } from "ethers";
+import { BigNumber } from 'ethers';
 import { Message } from 'blockchat-contract-sdk';
 
 /*
@@ -11,7 +11,7 @@ export enum status {
   sending,
   pending,
   success,
-  error
+  error,
 }
 
 export interface SendMessage extends Message {
@@ -20,7 +20,7 @@ export interface SendMessage extends Message {
 }
 
 export interface Recipient {
-  messageLength: BigNumber;
+  messageIdLength: BigNumber;
   messageIdList: Array<BigNumber>;
   readIndex: number;
   sendMessageIdList: Array<BigNumber>;
@@ -39,7 +39,7 @@ export interface AsyncRecipient {
 }
 
 export interface RecipientMap {
-  [recipient: string]: AsyncRecipient;
+  [recipientHash: string]: AsyncRecipient;
 }
 
 export interface ChatSync {

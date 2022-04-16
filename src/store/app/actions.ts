@@ -6,8 +6,8 @@
  */
 import { ActionTree } from 'vuex';
 import Vue from 'vue';
-import { RootState, AppState, BalanceMap, AsyncBalance } from '../index';
-import { common, BigNumber, utils } from '@/const';
+import { RootState, AppState } from '../index';
+import { common, utils } from '@/const';
 import { Ether } from '@/api';
 
 const actions: ActionTree<AppState, RootState> = {
@@ -26,7 +26,7 @@ const actions: ActionTree<AppState, RootState> = {
     state.sync.ether = new Ether();
     await state.sync.ether.load();
     state.sync.userAddress = await state.sync.ether.getSinger().getAddress();
-    await dispatch('setAddressAvatar', state.sync.userAddress);
+    await dispatch('setAvatar', state.sync.userAddress);
   },
 
   async watchStorage({ state }) {
@@ -54,7 +54,7 @@ const actions: ActionTree<AppState, RootState> = {
     }
   },
 
-  async setAddressAvatar({ state }, address: string) {
+  async setAvatar({ state }, address: string) {
     if (!state.sync.avatarMap[address]) {
       Vue.set(state.sync.avatarMap, address, utils.get.avatar(address));
     }

@@ -1,4 +1,4 @@
-import { EtherBlockChatUpgradeableClient, DeploymentInfo, } from 'blockchat-contract-sdk';
+import { EtherBlockChatUpgradeableClient, DeploymentInfo } from 'blockchat-contract-sdk';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { ethers, Signer } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';
@@ -15,7 +15,7 @@ export class Ether {
   private _blockchat: EtherBlockChatUpgradeableClient | undefined;
   private _ethereum: any;
 
-  constructor() { }
+  constructor() {}
 
   async load() {
     const provider: any = await detectEthereumProvider();

@@ -40,7 +40,7 @@ export interface AppState {
 
 const appState: AppState = {
   storage: {
-    recipientHashList:[],
+    recipientHashList: [],
     background: '',
     decimalLimit: 5,
     messageLimit: 20,
