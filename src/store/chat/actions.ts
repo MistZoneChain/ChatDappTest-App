@@ -23,9 +23,11 @@ const actions: ActionTree<ChatState, RootState> = {
 
   async watchAsync({ rootState, dispatch }) {
     rootState.app.storage.recipientTextList.forEach(async (recipientText: string) => {
+      log(recipientText)
       try {
         await dispatch('setRecipient', recipientText);
       } catch (err) {
+        
         log(err);
       }
     });
@@ -146,18 +148,20 @@ const actions: ActionTree<ChatState, RootState> = {
     });
   },
 
-  async deleteRecipient({ rootState, dispatch }, recipientText: string) {
+  async deleteRecipient({ state,rootState, dispatch }, recipientText: string) {
     const index = rootState.app.storage.recipientTextList.indexOf(recipientText);
     if (index != -1) {
       if (rootState.app.storage.activeRecipientText == recipientText) {
         if (rootState.app.storage.recipientTextList.length > 1) {
           await dispatch('setActiveRecipient', rootState.app.storage.recipientTextList[index == 0 ? index + 1 : index - 1]);
         } else {
-          await dispatch('setActiveRecipient', '');
+          throw new Error('must have one recipient');
         }
       }
       rootState.app.storage.recipientTextList.splice(index, 1);
-      //Vue.set(rootState.app.storage, 'recipientHashList', rootState.app.storage.recipientHashList);
+      Vue.set(state.async.recipientMap, recipientText, undefined);
+      delete state.async.recipientMap[recipientText];
+      Vue.set(state.async, 'recipientMap', state.async.recipientMap);
     }
   },
 
