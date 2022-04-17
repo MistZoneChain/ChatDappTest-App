@@ -4,7 +4,7 @@
       <div class="message-header-box">
         <div v-if="utils.have.value(chatAsync.recipientMap[appStorage.activeRecipientText])">
           <span class="message-header-text">
-            {{ appStorage.activeRecipientText }}
+            {{ `${appStorage.activeRecipientText} 消息：${chatAsync.recipientMap[appStorage.activeRecipientText].messageIdLength.toNumber()}` }}
           </span>
         </div>
       </div>
@@ -32,10 +32,10 @@
           <div class="message-content-message" :key="index" :class="{ 'text-right': message.sender == appSync.userAddress }">
             <my-avatar
               :avatar="appSync.avatarMap[message.sender]"
-              :name="message.sender"
-              :time="utils.format.date(message.createDate.toNumber())"
+              :name="utils.format.address(message.sender)"
+              :time="utils.format.date(message.createDate)"
               :showName="utils.format.address(message.sender)"
-              @goTo="utils.go.address(appSync.ether.getNetwork(), message.sender)"
+              @goTo="utils.go.address(appSync.ether.getChainId(), message.sender)"
             ></my-avatar>
 
             <a-popover style="display: inline-block">
@@ -45,7 +45,7 @@
                 <a-icon type="exclamation-circle" class="error-icon" v-if="message.status == 'error'" />
                 <a-icon type="check-circle" class="check-icon" v-if="message.status == 'success'" />
                 <div>{{ message.hash ? utils.format.hash(message.hash) : $t('message.not_send') }}</div>
-                <a-button @click="utils.go.tx(appSync.ether.getNetwork(), message.hash)" type="primary" :disabled="!message.hash">{{
+                <a-button @click="utils.go.tx(appSync.ether.getChainId(), message.hash)" type="primary" :disabled="!message.hash">{{
                   $t('message.view_on_the_blockchain_browser')
                 }}</a-button>
               </div>

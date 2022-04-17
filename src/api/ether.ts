@@ -10,7 +10,6 @@ import * as naclUtil from 'tweetnacl-util';
 export class Ether {
   private _singer: Signer | undefined;
   private _chainId: number | undefined;
-  private _network: string | undefined;
   private _provider: Web3Provider | undefined;
   private _blockchat: EtherBlockChatUpgradeableClient | undefined;
   private _ethereum: any;
@@ -64,11 +63,11 @@ export class Ether {
     return this._singer;
   }
 
-  getNetwork() {
-    if (!this._network) {
-      throw new Error('no network');
+  getChainId() {
+    if (!this._chainId) {
+      throw new Error('no chainId');
     }
-    return this._network;
+    return this._chainId;
   }
 
   getBlockChat() {

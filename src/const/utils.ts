@@ -1,10 +1,11 @@
 import Vue from 'vue';
 
-import { common } from '.';
+import { common, log } from '.';
 
 export { utils as etherUtils, BigNumber } from 'ethers';
 
 import Identicon from 'identicon.js';
+import { BigNumber } from 'ethers';
 
 const have = {
   value(obj: any) {
@@ -87,9 +88,13 @@ const format = {
     return moment(time).format('HH:mm:ss');
   },
 
-  date(time: number) {
+  date(time: BigNumber|Date) {
     let moment = Vue.prototype.$moment;
-    return moment(time).format('Y/M/D HH:mm:ss');
+    if(time instanceof BigNumber) {
+      return moment(time.toNumber() * 1000).format('Y/M/D HH:mm:ss');
+    }else{
+      return moment(time).format('Y/M/D HH:mm:ss');
+    }
   },
 
   balance(balance: number, decimals: number, symbol: string, effNum: number) {
@@ -110,20 +115,20 @@ const format = {
 };
 
 const go = {
-  address(chainName: string, address: string) {
-    window.open(common.chain[chainName].scanUrl + 'address/' + address);
+  address(chainId: number, address: string) {
+    window.open(common.chain[chainId].scanUrl + 'address/' + address);
   },
 
-  token(chainName: string, address: string) {
-    window.open(common.chain[chainName].scanUrl + 'token/' + address);
+  token(chainId: number, address: string) {
+    window.open(common.chain[chainId].scanUrl + 'token/' + address);
   },
 
-  tx(chainName: string, tx: string) {
-    window.open(common.chain[chainName].scanUrl + 'tx/' + tx);
+  tx(chainId: number, tx: string) {
+    window.open(common.chain[chainId].scanUrl + 'tx/' + tx);
   },
 
-  accounts(chainName: string) {
-    window.open(common.chain[chainName].scanUrl + 'accounts');
+  accounts(chainId: number) {
+    window.open(common.chain[chainId].scanUrl + 'accounts');
   },
 };
 

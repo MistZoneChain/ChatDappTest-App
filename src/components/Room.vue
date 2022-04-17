@@ -5,13 +5,13 @@
         <a-badge class="room-card-badge" />
         <my-avatar
           :avatar="appSync.avatarMap[chatAsync.recipientMap[recipientText].recipientHash]"
-          :showName="recipientText"
+          :showName="`${recipientText}`"
           @goTo="''"
         ></my-avatar>
         <div class="room-card-message">
           <div class="room-card-name">
             <div>
-              {{ recipientText }}
+              {{ `${recipientText}` }}
               <a-icon
                 type="close-circle-o"
                 class="room-card-close"

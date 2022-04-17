@@ -9,19 +9,16 @@ const etherAddress = '0x0000000000000000000000000000000000000001';
 
 export interface Chain {
   scanUrl: string;
-  chainId: number;
   chainName: string;
 }
 
-const chain: { [index: string]: Chain } = {
-  bsc: {
+const chain: { [chainId: string]: Chain } = {
+  56: {
     scanUrl: 'https://bscscan.com/',
-    chainId: 56,
     chainName: 'bsc',
   },
-  bscTest: {
+  97: {
     scanUrl: 'https://testnet.bscscan.com/',
-    chainId: 97,
     chainName: 'bscTest',
   },
 };
