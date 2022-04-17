@@ -10,7 +10,7 @@ import { Message } from 'blockchat-contract-sdk';
 export { Message } from 'blockchat-contract-sdk';
 
 export enum SendMessageStatus {
-  sending,
+  prePending,
   pending,
   success,
   error,

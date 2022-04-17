@@ -4,7 +4,9 @@
       <div class="message-header-box">
         <div v-if="utils.have.value(chatAsync.recipientMap[appStorage.activeRecipientText])">
           <span class="message-header-text">
-            {{ `${appStorage.activeRecipientText} 消息：${chatAsync.recipientMap[appStorage.activeRecipientText].messageIdLength.toNumber()}` }}
+            {{
+              `${appStorage.activeRecipientText} 消息：${chatAsync.recipientMap[appStorage.activeRecipientText].messageIdLength.toNumber()}`
+            }}
           </span>
         </div>
       </div>
@@ -40,19 +42,19 @@
 
             <a-popover style="display: inline-block">
               <div slot="content" class="avatar-card">
-                <a-icon type="loading" class="loading1-icon" v-if="message.status == 'send'" />
-                <a-icon type="loading" class="loading2-icon" v-if="message.status == 'pending'" />
-                <a-icon type="exclamation-circle" class="error-icon" v-if="message.status == 'error'" />
-                <a-icon type="check-circle" class="check-icon" v-if="message.status == 'success'" />
+                <a-icon type="loading" class="loading1-icon" v-if="message.status == SendMessageStatus.prePending" />
+                <a-icon type="loading" class="loading2-icon" v-if="message.status == SendMessageStatus.pending" />
+                <a-icon type="exclamation-circle" class="error-icon" v-if="message.status == SendMessageStatus.error" />
+                <a-icon type="check-circle" class="check-icon" v-if="message.status == SendMessageStatus.success" />
                 <div>{{ message.hash ? utils.format.hash(message.hash) : $t('message.not_send') }}</div>
                 <a-button @click="utils.go.tx(appSync.ether.getChainId(), message.hash)" type="primary" :disabled="!message.hash">{{
                   $t('message.view_on_the_blockchain_browser')
                 }}</a-button>
               </div>
-              <a-icon type="loading" class="loading1-icon" v-if="message.status == 'send'" />
-              <a-icon type="loading" class="loading2-icon" v-if="message.status == 'pending'" />
-              <a-icon type="exclamation-circle" class="error-icon" v-if="message.status == 'error'" />
-              <a-icon type="check-circle" class="check-icon" v-if="message.status == 'success'" />
+              <a-icon type="loading" class="loading1-icon" v-if="message.status == SendMessageStatus.prePending" />
+              <a-icon type="loading" class="loading2-icon" v-if="message.status == SendMessageStatus.pending" />
+              <a-icon type="exclamation-circle" class="error-icon" v-if="message.status == SendMessageStatus.error" />
+              <a-icon type="check-circle" class="check-icon" v-if="message.status == SendMessageStatus.success" />
             </a-popover>
             <div class="message-content-text">
               <a v-if="utils.is.url(message.content)" :href="message.content" target="_blank">{{ message.content }} </a>
@@ -71,7 +73,7 @@ import { Component, Vue, Watch } from 'vue-property-decorator';
 import MyAvatar from '@/components/Avatar.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
-import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, Message } from '@/store';
+import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, Message, SendMessageStatus } from '@/store';
 import { utils, common, BigNumber } from '@/const';
 
 const chatModule = namespace('chat');
@@ -92,6 +94,7 @@ export default class MyMessage extends Vue {
 
   utils = utils;
   common = common;
+  SendMessageStatus = SendMessageStatus;
 
   messageDom: HTMLElement;
   messageContentDom: HTMLElement;

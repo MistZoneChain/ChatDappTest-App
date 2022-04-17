@@ -94,7 +94,7 @@ const actions: ActionTree<ChatState, RootState> = {
   async sendMessage({ state, rootState }, content) {
     const recipientText = rootState.app.storage.activeRecipientText;
     const sendMessage: SendMessage = {
-      status: SendMessageStatus.sending,
+      status: SendMessageStatus.prePending,
       hash: '',
       sender: rootState.app.sync.userAddress,
       recipient: state.async.recipientMap[recipientText].recipientHash,
