@@ -27,7 +27,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
 import MyAvatar from '@/components/Avatar.vue';
-import { utils } from '@/const';
+import { common } from '@/const';
 import { AppStorage, AppSync, AppAsync, ChatSync } from '@/store';
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -44,7 +44,6 @@ export default class MySearch extends Vue {
   @chatModule.State('sync') chatSync: ChatSync;
 
   searchData: { recipientText?: string; recipientHash?: string; recipientMessageIdLength?: number } = {};
-  utils = utils;
 
   async handleSearch(recipientText: string) {
     const recipientHash = this.appSync.ether.getBlockChat().recipientHash(recipientText).toString();

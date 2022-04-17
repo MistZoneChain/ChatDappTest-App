@@ -55,8 +55,6 @@ export default class MyRoom extends Vue {
   @appModule.State('sync') chatSync: ChatSync;
   @chatModule.State('async') chatAsync: ChatAsync;
 
-  common = common;
-  utils = utils;
   recipientTextList: Array<string> = [];
 
   get_room_card_new_text(recipientText: string) {

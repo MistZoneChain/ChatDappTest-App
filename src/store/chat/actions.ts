@@ -45,15 +45,18 @@ const actions: ActionTree<ChatState, RootState> = {
         sendMessageList: [],
       };
       Vue.set(state.async.recipientMap, recipientText, recipient);
-      await dispatch('getMessage', recipientText);
+      await dispatch('getMessage', [recipientText]);
     }
   },
 
-  async getMessage({ state, rootState, dispatch }, recipientText?: string) {
+  async getMessage({ state, rootState, dispatch }, [recipientText, callback]) {
     if (!recipientText) {
       recipientText = rootState.app.storage.activeRecipientText;
     }
     if (state.async.recipientMap[recipientText].messageIdLength.toNumber() > state.async.recipientMap[recipientText].messageIdList.length) {
+      if (callback) {
+        callback();
+      }
       const recipient = state.async.recipientMap[recipientText];
       let start = recipient.messageIdLength.toNumber() - recipient.messageIdList.length;
       let length = rootState.app.storage.messageLimit;

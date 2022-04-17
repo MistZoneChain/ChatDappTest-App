@@ -46,7 +46,7 @@ const appState: AppState = {
     recipientTextList: ['blockchat', 'eth', 'bsc'],
     background: common.backgrounds[0].url,
     decimalLimit: 5,
-    messageLimit: 20,
+    messageLimit: 10,
   },
   sync: {
     userAddress: '',

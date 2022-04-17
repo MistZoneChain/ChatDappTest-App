@@ -29,7 +29,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import MyEmoji from '@/components/Emoji.vue';
 import { namespace } from 'vuex-class';
 import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync } from '@/store';
-import { log, utils } from '@/const';
+import { common } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -46,7 +46,6 @@ export default class MyInput extends Vue {
   @chatModule.State('sync') chatSync: ChatSync;
   @chatModule.State('async') chatAsync: ChatAsync;
 
-  utils = utils;
   messageInput: string = '';
 
   /**
@@ -64,7 +63,7 @@ export default class MyInput extends Vue {
       this.messageInput = '';
       await this.$store.dispatch('chat/sendMessage', content);
     } catch (err: any) {
-      log(err);
+      common.log(err);
       this.$message.error(err.message);
     }
   }

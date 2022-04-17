@@ -8,7 +8,7 @@
       </div>
     </div>
     <transition name="loading">
-      <div class="message-loading" v-if="status == 'load' || status == 'get'">
+      <div class="message-loading" v-if="get_loading()">
         <a-icon type="sync" spin class="message-loading-icon" />
       </div>
     </transition>
@@ -57,10 +57,16 @@ import MyAvatar from '@/components/Avatar.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
 import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, Message, SendMessageStatus } from '@/store';
-import { utils, common, BigNumber } from '@/const';
+import { utils, BigNumber } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
+
+enum MessageStatus {
+  loading,
+  geting,
+  listening,
+}
 
 @Component({
   components: {
@@ -76,8 +82,6 @@ export default class MyMessage extends Vue {
   @chatModule.State('async') chatAsync: ChatAsync;
 
   utils = utils;
-  common = common;
-  SendMessageStatus = SendMessageStatus;
 
   messageDom: HTMLElement;
   messageContentDom: HTMLElement;
@@ -85,9 +89,16 @@ export default class MyMessage extends Vue {
   messageOpacity: number = 1;
   lastMessagePosition: number = 0;
 
-  status: string = 'load';
+  status: MessageStatus = MessageStatus.loading;
   messageList: Array<Message | SendMessage> = [];
-  that = this;
+
+  get_loading(){
+    if(this.status == MessageStatus.loading || this.status == MessageStatus.geting){
+      return true
+    }else{
+      return false
+    }
+  }
 
   get_message_header_text() {
     try {
@@ -154,7 +165,7 @@ export default class MyMessage extends Vue {
 
   @Watch('appStorage.activeRecipientText')
   changeActiveRecipient() {
-    this.status = 'load';
+    this.status = MessageStatus.loading;
     this.messageList = [];
     this.messageOpacity = 0;
     if (this.headerDom) {
@@ -197,22 +208,22 @@ export default class MyMessage extends Vue {
 
   checkMessageList() {
     let loadAll = this.messageList.length >= this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList.length;
-    if (this.status == 'get') {
+    if (this.status == MessageStatus.geting) {
       this.scrollTo();
       if (loadAll) {
-        this.status = 'listen';
+        this.status = MessageStatus.listening;
       }
-    } else if (this.status == 'load') {
+    } else if (this.status == MessageStatus.loading) {
       this.messageDom = document.getElementsByClassName('message-main')[0] as HTMLElement;
       this.messageContentDom = document.getElementsByClassName('message-content')[0] as HTMLElement;
       this.headerDom = document.getElementsByClassName('message-header-text')[0] as HTMLElement;
       this.messageDom.addEventListener('scroll', this.handleScroll);
       this.scrollToBottom();
       if (loadAll) {
-        this.status = 'listen';
+        this.status = MessageStatus.listening;
       }
     } else if (
-      this.status == 'listen' &&
+      this.status == MessageStatus.listening &&
       this.messageDom.scrollTop + this.messageDom.offsetHeight + 100 > this.messageContentDom.scrollHeight
     ) {
       this.scrollToBottom();
@@ -221,7 +232,7 @@ export default class MyMessage extends Vue {
 
   handleScroll(event: Event) {
     if (event.currentTarget) {
-      if (this.messageDom.scrollTop == 0 && this.status == 'listen') {
+      if (this.messageDom.scrollTop == 0 && this.status == MessageStatus.listening) {
         this.lastMessagePosition = this.messageContentDom.offsetHeight;
         this.getMessage();
       }
@@ -229,8 +240,9 @@ export default class MyMessage extends Vue {
   }
 
   getMessage() {
-    this.status = 'get';
-    this.$store.dispatch('chat/getMessage');
+    this.$store.dispatch('chat/getMessage',[undefined,()=>{
+      this.status = MessageStatus.geting;
+    }]);
   }
 
   scrollToBottom() {
