@@ -28,9 +28,8 @@
 import { Component, Vue } from 'vue-property-decorator';
 import MyEmoji from '@/components/Emoji.vue';
 import { namespace } from 'vuex-class';
-import { ContractTransaction } from '@ethersproject/contracts';
-import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, SendMessageStatus } from '@/store';
-import { BigNumber, log, utils } from '@/const';
+import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync } from '@/store';
+import { log, utils } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -63,16 +62,8 @@ export default class MyInput extends Vue {
       }
       const content = this.messageInput;
       this.messageInput = '';
-      const messageId = await this.$store.dispatch('chat/sendMessage',content);
-      this.$set(
-        utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.sendMessageList),
-        'messageId',
-        messageId
-      );
-      this.$set(utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.sendMessageList), 'status', 'success');
-      // eslint-disable-next-line prettier/prettier
+      await this.$store.dispatch('chat/sendMessage', content);
     } catch (err: any) {
-      this.$set(utils.get.last(this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.sendMessageList), 'status', 'error');
       log(err);
       this.$message.error(err.message);
     }

@@ -1,10 +1,10 @@
 <template>
   <div class="room">
     <div v-for="(recipientText, index) in recipientTextList" :key="index">
-      <div class="room-card" :class="{ active: chatSync.activeRecipientText == recipientText }" @click="setActiveRecipient(recipientText)">
+      <div class="room-card" :class="{ active: appStorage.activeRecipientText == recipientText }" @click="setActiveRecipient(recipientText)">
         <a-badge class="room-card-badge" />
         <my-avatar
-          :avatar="appSync.avatarMap[chatAsync.recipientMap[recipientText].value.recipientHash]"
+          :avatar="appSync.avatarMap[chatAsync.recipientMap[recipientText].recipientHash]"
           :showName="recipientText"
           @goTo="''"
         ></my-avatar>
@@ -20,7 +20,7 @@
               />
             </div>
             <div class="room-card-new">
-              <div v-if="utils.have.value(chatAsync.messageMap[utils.get.last(chatAsync.recipientMap[recipientText].value.messageIdList)])">
+              <div v-if="utils.have.value(chatAsync.messageMap[utils.get.last(chatAsync.recipientMap[recipientText].messageIdList)])">
                 <div class="text" v-text="''"></div>
               </div>
             </div>
@@ -74,20 +74,20 @@ export default class MyRoom extends Vue {
     if (recipientTextList.length >= 2) {
       recipientTextList = recipientTextList.sort((recipientText_a, recipientText_b) => {
         if (
-          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].value.messageIdList)]) &&
-          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].value.messageIdList)])
+          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)]) &&
+          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)])
         ) {
           return (
             this.chatAsync.messageMap[
-              utils.get.last(this.chatAsync.recipientMap[recipientText_b].value.messageIdList)
-            ].value.createDate.toNumber() -
+              utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)
+            ].createDate.toNumber() -
             this.chatAsync.messageMap[
-              utils.get.last(this.chatAsync.recipientMap[recipientText_a].value.messageIdList)
-            ].value.createDate.toNumber()
+              utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)
+            ].createDate.toNumber()
           );
         } else {
           if (
-            utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].value.messageIdList)])
+            utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)])
           ) {
             return -1;
           }

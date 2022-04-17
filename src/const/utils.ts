@@ -8,7 +8,7 @@ import Identicon from 'identicon.js';
 
 const have = {
   value(obj: any) {
-    return obj && obj.value;
+    return obj && Object.keys(obj).length != 0;
   },
 };
 

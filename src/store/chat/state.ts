@@ -30,25 +30,15 @@ export interface Recipient {
   sendMessageList: Array<SendMessage>;
 }
 
-export interface AsyncMessage {
-  value: Message;
-}
-
 export interface MessageMap {
-  [messageId: string]: AsyncMessage;
-}
-
-export interface AsyncRecipient {
-  value: Recipient;
+  [messageId: string]: Message;
 }
 
 export interface RecipientMap {
-  [recipientText: string]: AsyncRecipient;
+  [recipientText: string]: Recipient;
 }
 
-export interface ChatSync {
-  activeRecipientText: string;
-}
+export interface ChatSync {}
 
 export interface ChatAsync {
   recipientMap: RecipientMap;
@@ -61,9 +51,7 @@ export interface ChatState {
 }
 
 const chatState: ChatState = {
-  sync: {
-    activeRecipientText: '',
-  },
+  sync: {},
   async: {
     recipientMap: {},
     messageMap: {},

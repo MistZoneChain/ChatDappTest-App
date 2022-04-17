@@ -7,7 +7,7 @@
 import { ActionTree } from 'vuex';
 import Vue from 'vue';
 import { RootState, AppState } from '../index';
-import { common, utils } from '@/const';
+import { utils } from '@/const';
 import { Ether } from '@/api';
 
 const actions: ActionTree<AppState, RootState> = {
@@ -35,7 +35,7 @@ const actions: ActionTree<AppState, RootState> = {
       if (storage) {
         utils.deep.clone(state.storage, JSON.parse(storage));
       } else {
-        throw '';
+        throw new Error('localStorage is empty!');
       }
     } catch (err) {
       localStorage.setItem(state.sync.userAddress, JSON.stringify(state.storage));
@@ -49,9 +49,6 @@ const actions: ActionTree<AppState, RootState> = {
         deep: true,
       }
     );
-    if (state.storage.background.length == 0) {
-      state.storage.background = common.backgrounds[0].url;
-    }
   },
 
   async setAvatar({ state }, address: string) {

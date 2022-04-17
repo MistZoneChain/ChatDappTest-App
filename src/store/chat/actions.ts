@@ -1,6 +1,6 @@
 import { ActionTree } from 'vuex';
 import { RootState, ChatState } from '../index';
-import { common, log, utils } from '@/const';
+import { log, utils } from '@/const';
 import Vue from 'vue';
 import { MessageCreatedEvent } from 'blockchat-contract-sdk';
 import { Recipient, SendMessage, SendMessageStatus } from '.';
@@ -17,8 +17,7 @@ const actions: ActionTree<ChatState, RootState> = {
     }
   },
 
-  async setSync({ state, dispatch }) {
-    state.sync.activeRecipientText = common.etherAddress;
+  async setSync({ dispatch }) {
     await dispatch('listenMessage');
   },
 
@@ -38,81 +37,96 @@ const actions: ActionTree<ChatState, RootState> = {
       const recipientHash = rootState.app.sync.ether.getBlockChat().recipientHash(recipientText);
       await dispatch('app/setAvatar', recipientHash.toString(), { root: true });
       const messageIdLength = await rootState.app.sync.ether.getBlockChat().getRecipientMessageListLength(recipientHash);
-      const fullRecipient: Recipient = {
+      const recipient: Recipient = {
         messageIdLength: messageIdLength,
         messageIdList: [],
         recipientHash: recipientHash.toString(),
         readIndex: 0,
         sendMessageList: [],
       };
-      Vue.set(state.async.recipientMap[recipientText], 'value', fullRecipient);
+      Vue.set(state.async.recipientMap, recipientText, recipient);
       await dispatch('getMessage', recipientText);
     }
   },
 
-  async getMessage({ state, rootState, dispatch }, recipientText: string) {
-    const recipient = state.async.recipientMap[recipientText].value;
-    let getIndex = recipient.messageIdLength.toNumber() - recipient.messageIdList.length;
-    let getLength = rootState.app.storage.messageLimit;
-    if (getIndex < getLength) {
-      getLength = getIndex;
-      getIndex = 0;
-    } else {
-      getIndex -= getLength;
+  async getMessage({ state, rootState, dispatch }, recipientText?: string) {
+    if (!recipientText) {
+      recipientText = rootState.app.storage.activeRecipientText;
     }
-    if (getLength != 0) {
-      const recipientMessageIdList = await rootState.app.sync.ether.getBlockChat().batchRecipientMessageId(state.async.recipientMap[recipientText].value.recipientHash, getIndex, getLength);
-      recipient.messageIdList.push(...recipientMessageIdList);
-      dispatch('setMessage', recipient.messageIdList);
+    if (
+      state.async.recipientMap[recipientText].messageIdLength.toNumber() >
+      state.async.recipientMap[recipientText].messageIdList.length
+    ) {
+      const recipient = state.async.recipientMap[recipientText];
+      let start = recipient.messageIdLength.toNumber() - recipient.messageIdList.length;
+      let length = rootState.app.storage.messageLimit;
+      if (start < length) {
+        length = start;
+        start = 0;
+      } else {
+        start -= length;
+      }
+      if (length != 0) {
+        const recipientMessageIdList = await rootState.app.sync.ether.getBlockChat().batchRecipientMessageId(state.async.recipientMap[recipientText].recipientHash, start, length);
+        recipient.messageIdList.push(...recipientMessageIdList);
+        dispatch('setMessage', recipient.messageIdList);
+      }
     }
   },
 
   async setMessage({ state, rootState, dispatch }, messageIdList: Array<BigNumberish>) {
-    try {
-      const getMessageIdList: Array<BigNumberish> = [];
-      messageIdList.forEach(async (messageId: BigNumberish) => {
-        if (!state.async.messageMap[messageId.toString()]) {
-          getMessageIdList.push(messageId);
-          Vue.set(state.async.messageMap, messageId.toString(), {});
-        }
-      });
-      if (getMessageIdList.length != 0) {
-        const messageList = await rootState.app.sync.ether.getBlockChat().batchMessage(getMessageIdList);
-        for (let i = 0; i < messageList.length; i++) {
-          Vue.set(state.async.messageMap[getMessageIdList[i].toString()], 'value', messageList[i]);
-          await dispatch('app/setAvatar', messageList[i].sender, { root: true });
-        }
+    const getMessageIdList: Array<BigNumberish> = [];
+    messageIdList.forEach(async (messageId: BigNumberish) => {
+      if (!state.async.messageMap[messageId.toString()]) {
+        getMessageIdList.push(messageId);
+        Vue.set(state.async.messageMap, messageId.toString(), {});
       }
-    } catch (err) {
-      log(err);
+    });
+    if (getMessageIdList.length != 0) {
+      const messageList = await rootState.app.sync.ether.getBlockChat().batchMessage(getMessageIdList);
+      for (let i = 0; i < messageList.length; i++) {
+        Vue.set(state.async.messageMap, getMessageIdList[i].toString(), messageList[i]);
+        await dispatch('app/setAvatar', messageList[i].sender, { root: true });
+      }
     }
   },
 
   async sendMessage({ state, rootState }, content) {
-    const recipientText = state.sync.activeRecipientText;
+    const recipientText = rootState.app.storage.activeRecipientText;
     const sendMessage: SendMessage = {
       status: SendMessageStatus.sending,
       hash: '',
       sender: rootState.app.sync.userAddress,
-      recipient: state.async.recipientMap[recipientText].value.recipientHash,
+      recipient: state.async.recipientMap[recipientText].recipientHash,
       content,
       sendDate: new Date(),
       createDate: BigNumber.from(0),
     };
-    state.async.recipientMap[recipientText].value.sendMessageList.push(sendMessage);
-    const message = await rootState.app.sync.ether.getBlockChat().createMessage(sendMessage.recipient, sendMessage.content, {}, (transaction: ContractTransaction) => {
+    const index = state.async.recipientMap[recipientText].sendMessageList.length
+    state.async.recipientMap[recipientText].sendMessageList.push(sendMessage);
+    try {
+      const message = await rootState.app.sync.ether.getBlockChat().createMessage(sendMessage.recipient, sendMessage.content, {}, (transaction: ContractTransaction) => {
+        Vue.set(
+          state.async.recipientMap[recipientText].sendMessageList[index],
+          'hash',
+          transaction.hash
+        );
+        Vue.set(
+          state.async.recipientMap[recipientText].sendMessageList[index],
+          'status',
+          SendMessageStatus.pending
+        );
+      });
       Vue.set(
-        utils.get.last(state.async.recipientMap[recipientText].value.sendMessageList),
-        'hash',
-        transaction.hash
+        state.async.recipientMap[recipientText].sendMessageList[index],
+        'messageId',
+        message.messageId
       );
-      Vue.set(
-        utils.get.last(state.async.recipientMap[recipientText].value.sendMessageList),
-        'status',
-        SendMessageStatus.pending
-      );
-    });
-    return message;
+      Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.success);
+    } catch (error) {
+      Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.error);
+      throw error;
+    }
   },
 
 
@@ -121,8 +135,8 @@ const actions: ActionTree<ChatState, RootState> = {
       try {
         const recipientTextList = Object.keys(state.async.recipientMap);
         for (let i = 0; i < recipientTextList.length; i++) {
-          if (state.async.recipientMap[recipientTextList[i]].value.recipientHash == event.recipient.toString()) {
-            state.async.recipientMap[recipientTextList[i]].value.messageIdList.push(event.messageId);
+          if (state.async.recipientMap[recipientTextList[i]].recipientHash == event.recipient.toString()) {
+            state.async.recipientMap[recipientTextList[i]].messageIdList.push(event.messageId);
             break;
           }
         }
@@ -132,10 +146,10 @@ const actions: ActionTree<ChatState, RootState> = {
     });
   },
 
-  async deleteRecipient({ state, rootState, dispatch }, recipientText: string) {
+  async deleteRecipient({ rootState, dispatch }, recipientText: string) {
     const index = rootState.app.storage.recipientTextList.indexOf(recipientText);
     if (index != -1) {
-      if (state.sync.activeRecipientText == recipientText) {
+      if (rootState.app.storage.activeRecipientText == recipientText) {
         if (rootState.app.storage.recipientTextList.length > 1) {
           await dispatch('setActiveRecipient', rootState.app.storage.recipientTextList[index == 0 ? index + 1 : index - 1]);
         } else {
@@ -154,7 +168,7 @@ const actions: ActionTree<ChatState, RootState> = {
       }
       await dispatch('setRecipient', recipientText);
     }
-    state.sync.activeRecipientText = recipientText;
+    rootState.app.storage.activeRecipientText = recipientText;
   },
 };
 

@@ -2,9 +2,9 @@
   <div class="message">
     <div class="message-header">
       <div class="message-header-box">
-        <div v-if="utils.have.value(chatAsync.recipientMap[chatSync.activeRecipientText])">
+        <div v-if="utils.have.value(chatAsync.recipientMap[appStorage.activeRecipientText])">
           <span class="message-header-text">
-            {{ chatSync.activeRecipientText }}
+            {{ appStorage.activeRecipientText }}
           </span>
         </div>
       </div>
@@ -20,9 +20,9 @@
           <div
             class="message-content-noData"
             v-if="
-              utils.have.value(chatAsync.recipientMap[chatSync.activeRecipientText]) &&
-              chatAsync.recipientMap[chatSync.activeRecipientText].value.messageIdLength.toNumber() <=
-                chatAsync.recipientMap[chatSync.activeRecipientText].value.messageIdLength.length
+              utils.have.value(chatAsync.recipientMap[appStorage.activeRecipientText]) &&
+              chatAsync.recipientMap[appStorage.activeRecipientText].messageIdLength.toNumber() <=
+                chatAsync.recipientMap[appStorage.activeRecipientText].messageIdList.length
             "
           >
             {{ $t('message.no_more_message') }}
@@ -112,7 +112,7 @@ export default class MyMessage extends Vue {
     this.setMessageList();
   }
 
-  @Watch('chatSync.activeRecipient')
+  @Watch('appStorage.activeRecipientText')
   changeActiveRecipient() {
     this.status = 'load';
     this.messageList = [];
@@ -127,21 +127,21 @@ export default class MyMessage extends Vue {
   }
 
   setMessageList() {
-    if (utils.have.value(this.chatAsync.recipientMap[this.chatSync.activeRecipientText])) {
+    if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
       let messageList: Array<Message | SendMessage> = [];
       let messageIdList: Array<BigNumber> = [];
-      // this.chatAsync.recipientMap[this.chatSync.activeRecipientHash].value.sendMessageIdList.forEach((sendMessageId) => {
-      //   chatMessages.push(sendMessage);
-      //   if (sendMessage.messageId) {
-      //     chatMessageIds.push(sendMessage.messageId);
-      //   }
-      // });
-      this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdList
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList.forEach((sendMessage) => {
+        messageList.push(sendMessage);
+        // if (sendMessage.messageId) {
+        //   messageIdList.push(sendMessage.messageId);
+        // }
+      });
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList
         .filter((messageId) => {
           return utils.have.value(this.chatAsync.messageMap[messageId.toString()]) && messageIdList.indexOf(messageId) == -1;
         })
         .forEach((messageId) => {
-          messageList.push(this.chatAsync.messageMap[messageId.toString()].value);
+          messageList.push(this.chatAsync.messageMap[messageId.toString()]);
         });
       if (this.messageList.length != messageList.length) {
         messageList = messageList.sort((message_a: Message, message_b: Message) => {
@@ -156,7 +156,7 @@ export default class MyMessage extends Vue {
   }
 
   checkMessageList() {
-    let loadAll = this.messageList.length >= this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdList.length;
+    let loadAll = this.messageList.length >= this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList.length;
     if (this.status == 'get') {
       this.scrollTo();
       if (loadAll) {
@@ -188,14 +188,9 @@ export default class MyMessage extends Vue {
     }
   }
 
-  async getMessage() {
-    if (
-      this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdLength.toNumber() >
-      this.chatAsync.recipientMap[this.chatSync.activeRecipientText].value.messageIdList.length
-    ) {
-      this.status = 'get';
-      await this.$store.dispatch('chat/getMessage', this.chatSync.activeRecipientText);
-    }
+  getMessage() {
+    this.status = 'get';
+    this.$store.dispatch('chat/getMessage');
   }
 
   scrollToBottom() {

@@ -5,8 +5,10 @@
  * @LastEditors: 33357
  */
 import { Ether } from '@/api';
+import { common } from '@/const';
 
 export interface AppStorage {
+  activeRecipientText: string;
   recipientTextList: Array<string>;
   background: string;
   decimalLimit: number;
@@ -40,8 +42,9 @@ export interface AppState {
 
 const appState: AppState = {
   storage: {
-    recipientTextList: [],
-    background: '',
+    activeRecipientText: 'blockchat',
+    recipientTextList: ['blockchat', 'eth', 'bsc'],
+    background: common.backgrounds[0].url,
     decimalLimit: 5,
     messageLimit: 20,
   },
