@@ -18,8 +18,8 @@ export enum SendMessageStatus {
 
 export interface SendMessage extends Message {
   status: SendMessageStatus;
-  hash: string;
-  sendDate: Date;
+  hash?: string;
+  messageId?: BigNumber;
 }
 
 export interface Recipient {

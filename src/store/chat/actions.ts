@@ -4,7 +4,7 @@ import { log, utils } from '@/const';
 import Vue from 'vue';
 import { MessageCreatedEvent } from 'blockchat-contract-sdk';
 import { Recipient, SendMessage, SendMessageStatus } from '.';
-import { BigNumber, BigNumberish, ContractTransaction } from 'ethers';
+import { BigNumber, BigNumberish, ContractReceipt, ContractTransaction } from 'ethers';
 
 const actions: ActionTree<ChatState, RootState> = {
   async start({ dispatch }) {
@@ -23,7 +23,6 @@ const actions: ActionTree<ChatState, RootState> = {
 
   async watchAsync({ rootState, dispatch }) {
     rootState.app.storage.recipientTextList.forEach(async (recipientText: string) => {
-      log(recipientText);
       try {
         await dispatch('setRecipient', recipientText);
       } catch (err) {
@@ -95,24 +94,25 @@ const actions: ActionTree<ChatState, RootState> = {
     const recipientText = rootState.app.storage.activeRecipientText;
     const sendMessage: SendMessage = {
       status: SendMessageStatus.prePending,
-      hash: '',
       sender: rootState.app.sync.userAddress,
       recipient: state.async.recipientMap[recipientText].recipientHash,
       content,
-      sendDate: new Date(),
-      createDate: BigNumber.from(0),
+      createDate: BigNumber.from(new Date().getTime()).div(1000),
     };
     const index = state.async.recipientMap[recipientText].sendMessageList.length;
     state.async.recipientMap[recipientText].sendMessageList.push(sendMessage);
     try {
       const message = await rootState.app.sync.ether
         .getBlockChat()
-        .createMessage(sendMessage.recipient, sendMessage.content, {}, (transaction: ContractTransaction) => {
-          Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'hash', transaction.hash);
-          Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.pending);
+        .createMessage(sendMessage.recipient, sendMessage.content, {}, (transaction: ContractTransaction | ContractReceipt) => {
+          if ('hash' in transaction) {
+            Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'hash', transaction.hash);
+            Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.pending);
+          } else {
+            Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.success);
+          }
         });
       Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'messageId', message.messageId);
-      Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.success);
     } catch (error) {
       Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.error);
       throw error;

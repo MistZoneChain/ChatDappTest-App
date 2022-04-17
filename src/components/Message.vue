@@ -2,13 +2,9 @@
   <div class="message">
     <div class="message-header">
       <div class="message-header-box">
-        <div v-if="utils.have.value(chatAsync.recipientMap[appStorage.activeRecipientText])">
-          <span class="message-header-text">
-            {{
-              `${appStorage.activeRecipientText} 消息：${chatAsync.recipientMap[appStorage.activeRecipientText].messageIdLength.toNumber()}`
-            }}
-          </span>
-        </div>
+        <span class="message-header-text">
+          {{ get_message_header_text() }}
+        </span>
       </div>
     </div>
     <transition name="loading">
@@ -19,42 +15,29 @@
     <div class="message-main" :style="{ opacity: messageOpacity }">
       <div class="message-content">
         <transition name="noData">
-          <div
-            class="message-content-noData"
-            v-if="
-              utils.have.value(chatAsync.recipientMap[appStorage.activeRecipientText]) &&
-              chatAsync.recipientMap[appStorage.activeRecipientText].messageIdLength.toNumber() <=
-                chatAsync.recipientMap[appStorage.activeRecipientText].messageIdList.length
-            "
-          >
-            {{ $t('message.no_more_message') }}
+          <div class="message-content-noData">
+            {{ get_noData_text() }}
           </div>
         </transition>
         <template v-for="(message, index) in messageList">
           <div class="message-content-message" :key="index" :class="{ 'text-right': message.sender == appSync.userAddress }">
             <my-avatar
-              :avatar="appSync.avatarMap[message.sender]"
-              :name="utils.format.address(message.sender)"
-              :time="utils.format.date(message.createDate)"
-              :showName="utils.format.address(message.sender)"
+              :avatar="get_my_avatar(message).avatar"
+              :name="get_my_avatar(message).name"
+              :time="get_my_avatar(message).time"
+              :showName="get_my_avatar(message).showName"
               @goTo="utils.go.address(appSync.ether.getChainId(), message.sender)"
             ></my-avatar>
 
-            <a-popover style="display: inline-block">
+            <a-popover style="display: inline-block" v-if="'status' in message">
               <div slot="content" class="avatar-card">
-                <a-icon type="loading" class="loading1-icon" v-if="message.status == SendMessageStatus.prePending" />
-                <a-icon type="loading" class="loading2-icon" v-if="message.status == SendMessageStatus.pending" />
-                <a-icon type="exclamation-circle" class="error-icon" v-if="message.status == SendMessageStatus.error" />
-                <a-icon type="check-circle" class="check-icon" v-if="message.status == SendMessageStatus.success" />
-                <div>{{ message.hash ? utils.format.hash(message.hash) : $t('message.not_send') }}</div>
+                <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
+                <div>{{ get_avatar_card(message).text }}</div>
                 <a-button @click="utils.go.tx(appSync.ether.getChainId(), message.hash)" type="primary" :disabled="!message.hash">{{
                   $t('message.view_on_the_blockchain_browser')
                 }}</a-button>
               </div>
-              <a-icon type="loading" class="loading1-icon" v-if="message.status == SendMessageStatus.prePending" />
-              <a-icon type="loading" class="loading2-icon" v-if="message.status == SendMessageStatus.pending" />
-              <a-icon type="exclamation-circle" class="error-icon" v-if="message.status == SendMessageStatus.error" />
-              <a-icon type="check-circle" class="check-icon" v-if="message.status == SendMessageStatus.success" />
+              <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
             </a-popover>
             <div class="message-content-text">
               <a v-if="utils.is.url(message.content)" :href="message.content" target="_blank">{{ message.content }} </a>
@@ -104,6 +87,69 @@ export default class MyMessage extends Vue {
 
   status: string = 'load';
   messageList: Array<Message | SendMessage> = [];
+  that = this;
+
+  get_message_header_text() {
+    try {
+      return `${this.appStorage.activeRecipientText} 消息：${this.chatAsync.recipientMap[
+        this.appStorage.activeRecipientText
+      ].messageIdLength.toNumber()}`;
+    } catch (error) {
+      return '';
+    }
+  }
+
+  get_noData_text() {
+    try {
+      if (
+        utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText]) &&
+        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength.toNumber() <=
+          this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList.length
+      ) {
+        return this.$t('message.no_more_message');
+      }
+      return '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  get_my_avatar(message: Message | SendMessage) {
+    return {
+      avatar: this.appSync.avatarMap[message.sender],
+      name: utils.format.address(message.sender),
+      time: utils.format.date(message.createDate),
+      showName: utils.format.address(message.sender),
+    };
+  }
+
+  get_avatar_card(message: SendMessage) {
+    if (message.status == SendMessageStatus.prePending) {
+      return {
+        type: 'loading',
+        class: 'loading1-icon',
+        text: this.$t('message.not_send'),
+      };
+    } else if (message.status == SendMessageStatus.pending) {
+      return {
+        type: 'loading',
+        class: 'loading2-icon',
+        text: message.hash ? utils.format.hash(message.hash) : '',
+      };
+    } else if (message.status == SendMessageStatus.error) {
+      return {
+        type: 'exclamation-circle',
+        class: 'error-icon',
+        text: message.hash ? utils.format.hash(message.hash) : '',
+      };
+    } else if (message.status == SendMessageStatus.success) {
+      return {
+        type: 'check-circle',
+        class: 'check-icon',
+        text: message.hash ? utils.format.hash(message.hash) : '',
+      };
+    }
+  }
 
   @Watch('chatAsync.messageMap', { deep: true })
   changeMessageMap() {
@@ -135,9 +181,9 @@ export default class MyMessage extends Vue {
       let messageIdList: Array<BigNumber> = [];
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList.forEach((sendMessage) => {
         messageList.push(sendMessage);
-        // if (sendMessage.messageId) {
-        //   messageIdList.push(sendMessage.messageId);
-        // }
+        if (sendMessage.messageId) {
+          messageIdList.push(sendMessage.messageId);
+        }
       });
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList
         .filter((messageId) => {

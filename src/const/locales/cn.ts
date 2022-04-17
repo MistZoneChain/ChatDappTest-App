@@ -20,6 +20,7 @@ export default {
   },
   message: {
     not_send: '没有发送',
+    send_success: '发送成功',
     no_more_message: '没有更多消息了~',
     view_on_the_blockchain_browser: '在区块链浏览器上查看',
     click_to_decrypt_message: '点击解密消息',

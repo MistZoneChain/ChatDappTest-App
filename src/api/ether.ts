@@ -2,7 +2,6 @@ import { EtherBlockChatUpgradeableClient, DeploymentInfo } from 'blockchat-contr
 import detectEthereumProvider from '@metamask/detect-provider';
 import { ethers, Signer } from 'ethers';
 import { Web3Provider } from '@ethersproject/providers';
-import { common } from '@/const';
 import * as ethUtil from 'ethereumjs-util';
 import * as sigUtil from '@metamask/eth-sig-util';
 import * as naclUtil from 'tweetnacl-util';

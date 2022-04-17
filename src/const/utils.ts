@@ -1,6 +1,6 @@
 import Vue from 'vue';
 
-import { common, log } from '.';
+import { common } from '.';
 
 export { utils as etherUtils, BigNumber } from 'ethers';
 

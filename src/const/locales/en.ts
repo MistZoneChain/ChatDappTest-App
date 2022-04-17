@@ -20,6 +20,7 @@ export default {
   },
   message: {
     not_send: 'Not send',
+    send_success: 'Send success',
     no_more_message: 'No more message ~',
     view_on_the_blockchain_browser: 'View on the blockchain browser',
     click_to_decrypt_message: 'Click to decrypt message',
