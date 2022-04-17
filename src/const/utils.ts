@@ -88,11 +88,11 @@ const format = {
     return moment(time).format('HH:mm:ss');
   },
 
-  date(time: BigNumber|Date) {
+  date(time: BigNumber | Date) {
     let moment = Vue.prototype.$moment;
-    if(time instanceof BigNumber) {
+    if (time instanceof BigNumber) {
       return moment(time.toNumber() * 1000).format('Y/M/D HH:mm:ss');
-    }else{
+    } else {
       return moment(time).format('Y/M/D HH:mm:ss');
     }
   },

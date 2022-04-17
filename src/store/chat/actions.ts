@@ -23,11 +23,10 @@ const actions: ActionTree<ChatState, RootState> = {
 
   async watchAsync({ rootState, dispatch }) {
     rootState.app.storage.recipientTextList.forEach(async (recipientText: string) => {
-      log(recipientText)
+      log(recipientText);
       try {
         await dispatch('setRecipient', recipientText);
       } catch (err) {
-        
         log(err);
       }
     });
@@ -55,10 +54,7 @@ const actions: ActionTree<ChatState, RootState> = {
     if (!recipientText) {
       recipientText = rootState.app.storage.activeRecipientText;
     }
-    if (
-      state.async.recipientMap[recipientText].messageIdLength.toNumber() >
-      state.async.recipientMap[recipientText].messageIdList.length
-    ) {
+    if (state.async.recipientMap[recipientText].messageIdLength.toNumber() > state.async.recipientMap[recipientText].messageIdList.length) {
       const recipient = state.async.recipientMap[recipientText];
       let start = recipient.messageIdLength.toNumber() - recipient.messageIdList.length;
       let length = rootState.app.storage.messageLimit;
@@ -69,7 +65,9 @@ const actions: ActionTree<ChatState, RootState> = {
         start -= length;
       }
       if (length != 0) {
-        const recipientMessageIdList = await rootState.app.sync.ether.getBlockChat().batchRecipientMessageId(state.async.recipientMap[recipientText].recipientHash, start, length);
+        const recipientMessageIdList = await rootState.app.sync.ether
+          .getBlockChat()
+          .batchRecipientMessageId(state.async.recipientMap[recipientText].recipientHash, start, length);
         recipient.messageIdList.push(...recipientMessageIdList);
         dispatch('setMessage', recipient.messageIdList);
       }
@@ -104,33 +102,22 @@ const actions: ActionTree<ChatState, RootState> = {
       sendDate: new Date(),
       createDate: BigNumber.from(0),
     };
-    const index = state.async.recipientMap[recipientText].sendMessageList.length
+    const index = state.async.recipientMap[recipientText].sendMessageList.length;
     state.async.recipientMap[recipientText].sendMessageList.push(sendMessage);
     try {
-      const message = await rootState.app.sync.ether.getBlockChat().createMessage(sendMessage.recipient, sendMessage.content, {}, (transaction: ContractTransaction) => {
-        Vue.set(
-          state.async.recipientMap[recipientText].sendMessageList[index],
-          'hash',
-          transaction.hash
-        );
-        Vue.set(
-          state.async.recipientMap[recipientText].sendMessageList[index],
-          'status',
-          SendMessageStatus.pending
-        );
-      });
-      Vue.set(
-        state.async.recipientMap[recipientText].sendMessageList[index],
-        'messageId',
-        message.messageId
-      );
+      const message = await rootState.app.sync.ether
+        .getBlockChat()
+        .createMessage(sendMessage.recipient, sendMessage.content, {}, (transaction: ContractTransaction) => {
+          Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'hash', transaction.hash);
+          Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.pending);
+        });
+      Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'messageId', message.messageId);
       Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.success);
     } catch (error) {
       Vue.set(state.async.recipientMap[recipientText].sendMessageList[index], 'status', SendMessageStatus.error);
       throw error;
     }
   },
-
 
   async listenMessage({ state, rootState }) {
     rootState.app.sync.ether.getBlockChat().listenMessage(async (event: MessageCreatedEvent) => {
@@ -148,7 +135,7 @@ const actions: ActionTree<ChatState, RootState> = {
     });
   },
 
-  async deleteRecipient({ state,rootState, dispatch }, recipientText: string) {
+  async deleteRecipient({ state, rootState, dispatch }, recipientText: string) {
     const index = rootState.app.storage.recipientTextList.indexOf(recipientText);
     if (index != -1) {
       if (rootState.app.storage.activeRecipientText == recipientText) {
