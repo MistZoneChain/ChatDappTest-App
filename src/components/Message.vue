@@ -22,10 +22,10 @@
         <template v-for="(message, index) in messageList">
           <div class="message-content-message" :key="index" :class="{ 'text-right': message.sender == appSync.userAddress }">
             <my-avatar
-              :avatar="get_my_avatar(message).avatar"
-              :name="get_my_avatar(message).name"
-              :time="get_my_avatar(message).time"
-              :showName="get_my_avatar(message).showName"
+              :avatar="appSync.avatarMap[message.sender]"
+              :name="utils.format.address(message.sender)"
+              :time="utils.format.date(message.createDate)"
+              :showName="utils.format.address(message.sender)"
               @goTo="utils.go.address(appSync.ether.getChainId(), message.sender)"
             ></my-avatar>
 
@@ -112,15 +112,6 @@ export default class MyMessage extends Vue {
     } catch (error) {
       return '';
     }
-  }
-
-  get_my_avatar(message: Message | SendMessage) {
-    return {
-      avatar: this.appSync.avatarMap[message.sender],
-      name: utils.format.address(message.sender),
-      time: utils.format.date(message.createDate),
-      showName: utils.format.address(message.sender),
-    };
   }
 
   get_avatar_card(message: SendMessage) {

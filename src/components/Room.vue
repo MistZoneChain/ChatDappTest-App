@@ -7,11 +7,15 @@
         @click="setActiveRecipient(recipientText)"
       >
         <a-badge class="room-card-badge" />
-        <my-avatar :avatar="appSync.avatarMap[chatAsync.recipientMap[recipientText].recipientHash]" :showButton="false" :showName="recipientText"></my-avatar>
+        <my-avatar
+          :avatar="appSync.avatarMap[chatAsync.recipientMap[recipientText].recipientHash]"
+          :showButton="false"
+          :showName="recipientText"
+        ></my-avatar>
         <div class="room-card-message">
           <div class="room-card-name">
             <div>
-              {{ `${recipientText}` }}
+              {{ recipientText }}
               <a-icon
                 type="close-circle-o"
                 class="room-card-close"
@@ -20,9 +24,7 @@
               />
             </div>
             <div class="room-card-new">
-              <div v-if="utils.have.value(chatAsync.messageMap[utils.get.last(chatAsync.recipientMap[recipientText].messageIdList)])">
-                <div class="text" v-text="''"></div>
-              </div>
+              {{ get_room_card_new_text(recipientText) }}
             </div>
           </div>
         </div>
@@ -56,6 +58,16 @@ export default class MyRoom extends Vue {
   common = common;
   utils = utils;
   recipientTextList: Array<string> = [];
+
+  get_room_card_new_text(recipientText: string) {
+    try {
+      return `[${utils.format.address(
+        this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText].messageIdList)].sender
+      )}]:${this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText].messageIdList)].content}`;
+    } catch (error) {
+      return '';
+    }
+  }
 
   @Watch('chatAsync.recipientMap', { deep: true })
   changeRecipientMap() {
