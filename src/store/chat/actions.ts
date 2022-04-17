@@ -159,7 +159,7 @@ const actions: ActionTree<ChatState, RootState> = {
         }
       }
       rootState.app.storage.recipientTextList.splice(index, 1);
-      Vue.set(state.async.recipientMap, recipientText, undefined);
+      Vue.set(state.async.recipientMap, recipientText, {});
       delete state.async.recipientMap[recipientText];
       Vue.set(state.async, 'recipientMap', state.async.recipientMap);
     }
