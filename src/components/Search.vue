@@ -13,7 +13,7 @@
         <a-select-option v-if="searchData.recipientText" :value="searchData.recipientText">
           <div @click="selectChat(searchData.recipientText)">
             <div class="avatar">
-              <my-avatar :avatar="appSync.avatarMap[searchData.recipientHash]" :canCheck="false"></my-avatar>
+              <my-avatar :avatar="appSync.avatarMap[searchData.recipientHash]" :showButton="false" :showName="searchData.recipientText"></my-avatar>
               <span class="avatar-name">{{ `${searchData.recipientText} 消息：${searchData.recipientMessageIdLength}` }}</span>
             </div>
           </div>

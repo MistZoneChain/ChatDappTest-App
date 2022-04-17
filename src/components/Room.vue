@@ -1,13 +1,13 @@
 <template>
   <div class="room">
     <div v-for="(recipientText, index) in recipientTextList" :key="index">
-      <div class="room-card" :class="{ active: appStorage.activeRecipientText == recipientText }" @click="setActiveRecipient(recipientText)">
+      <div
+        class="room-card"
+        :class="{ active: appStorage.activeRecipientText == recipientText }"
+        @click="setActiveRecipient(recipientText)"
+      >
         <a-badge class="room-card-badge" />
-        <my-avatar
-          :avatar="appSync.avatarMap[chatAsync.recipientMap[recipientText].recipientHash]"
-          :showName="`${recipientText}`"
-          @goTo="''"
-        ></my-avatar>
+        <my-avatar :avatar="appSync.avatarMap[chatAsync.recipientMap[recipientText].recipientHash]" :showButton="false" :showName="recipientText"></my-avatar>
         <div class="room-card-message">
           <div class="room-card-name">
             <div>
@@ -78,17 +78,11 @@ export default class MyRoom extends Vue {
           utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)])
         ) {
           return (
-            this.chatAsync.messageMap[
-              utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)
-            ].createDate.toNumber() -
-            this.chatAsync.messageMap[
-              utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)
-            ].createDate.toNumber()
+            this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)].createDate.toNumber() -
+            this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)].createDate.toNumber()
           );
         } else {
-          if (
-            utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)])
-          ) {
+          if (utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)])) {
             return -1;
           }
           return 1;

@@ -8,10 +8,10 @@
 <template>
   <div class="avatar">
     <a-popover>
-      <div slot="content" class="avatar-card" v-if="canCheck">
+      <div slot="content" class="avatar-card">
         <a-avatar :size="60" :src="avatar" />
         <div>{{ showName }}</div>
-        <a-button @click="$emit('goTo')" type="primary" :disabled="disabled">{{ $t('avatar.view_on_the_blockchain_browser') }}</a-button>
+        <a-button v-if="showButton" @click="$emit('goTo')" type="primary" :disabled="disabled">{{ $t('avatar.view_on_the_blockchain_browser') }}</a-button>
       </div>
       <a-avatar class="avatar-img" :src="avatar" />
     </a-popover>
@@ -32,7 +32,7 @@ export default class MyAvatar extends Vue {
   @Prop() time: string;
   @Prop() showName: string;
   @Prop({ default: false }) disabled: boolean;
-  @Prop({ default: true }) canCheck: boolean;
+  @Prop({ default: true }) showButton: boolean;
 }
 </script>
 
