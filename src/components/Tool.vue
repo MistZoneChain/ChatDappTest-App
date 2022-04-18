@@ -42,9 +42,9 @@
         <a-button type="primary" @click="changeBackground(backgroundInput)">{{ $t('tool.confirm') }}</a-button>
       </div>
       <div class="tool-recommend">
-        <div class="recommend" @click="changeBackground(background.url)" v-for="(background, index) in common.backgrounds" :key="index">
-          <img :src="background.url" alt="" />
-          <span class="text">{{ background.text }}</span>
+        <div class="recommend" @click="changeBackground(BACKGROUND.URL)" v-for="(BACKGROUND, index) in COMMON.BACKGROUND_LIST" :key="index">
+          <img :src="BACKGROUND.URL" alt="" />
+          <span class="text">{{ BACKGROUND.TEXT }}</span>
         </div>
       </div>
     </a-modal>
@@ -54,7 +54,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
-import { common } from '@/const';
+import { COMMON } from '@/const';
 import { AppStorage, AppSync } from '@/store';
 
 const appModule = namespace('app');
@@ -70,7 +70,7 @@ export default class MyTool extends Vue {
   showCrowdFundingModal: boolean = false;
 
   backgroundInput: string = '';
-  common = common;
+  COMMON = COMMON;
 
   created() {}
 

@@ -27,7 +27,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
 import MyAvatar from '@/components/Avatar.vue';
-import { common } from '@/const';
+import { log } from '@/const';
 import { AppStorage, AppSync, AppAsync, ChatSync } from '@/store';
 const chatModule = namespace('chat');
 const appModule = namespace('app');

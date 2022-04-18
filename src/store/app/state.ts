@@ -5,7 +5,8 @@
  * @LastEditors: 33357
  */
 import { Ether } from '@/api';
-import { common } from '@/const';
+import { API } from '@/api/api';
+import { COMMON } from '@/const';
 
 export interface AppStorage {
   activeRecipientText: string;
@@ -20,18 +21,15 @@ export interface AppSync {
   isMobile: boolean;
   avatarMap: { [address: string]: string };
   ether: Ether;
+  api:API;
 }
 
 export interface AppAsync {
-  balanceMap: BalanceMap;
-}
-
-export interface AsyncBalance {
-  value: number;
+  USD_Value_Map: BalanceMap;
 }
 
 export interface BalanceMap {
-  [walletAddress: string]: AsyncBalance;
+  [address: string]: number;
 }
 
 export interface AppState {
@@ -44,7 +42,7 @@ const appState: AppState = {
   storage: {
     activeRecipientText: 'blockchat',
     recipientTextList: ['blockchat', 'eth', 'bsc'],
-    background: common.backgrounds[0].url,
+    background: COMMON.BACKGROUND_LIST[0].URL,
     decimalLimit: 5,
     messageLimit: 10,
   },
@@ -53,9 +51,10 @@ const appState: AppState = {
     isMobile: false,
     avatarMap: {},
     ether: new Ether(),
+    api:new API(),
   },
   async: {
-    balanceMap: {},
+    USD_Value_Map: {},
   },
 };
 

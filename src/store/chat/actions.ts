@@ -89,6 +89,7 @@ const actions: ActionTree<ChatState, RootState> = {
       for (let i = 0; i < messageList.length; i++) {
         Vue.set(state.async.messageMap, getMessageIdList[i].toString(), messageList[i]);
         await dispatch('app/setAvatar', messageList[i].sender, { root: true });
+        await dispatch('setUSD_Value', messageList[i].sender, { root: true });
       }
     }
   },

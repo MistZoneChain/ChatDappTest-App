@@ -23,7 +23,7 @@
           <div class="message-content-message" :key="index" :class="{ 'text-right': message.sender == appSync.userAddress }">
             <my-avatar
               :avatar="appSync.avatarMap[message.sender]"
-              :name="utils.format.address(message.sender)"
+              :name="get_name(message)"
               :time="utils.format.date(message.createDate)"
               :showName="utils.format.address(message.sender)"
               @goTo="utils.go.address(appSync.ether.getChainId(), message.sender)"
@@ -57,7 +57,7 @@ import MyAvatar from '@/components/Avatar.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
 import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, Message, SendMessageStatus } from '@/store';
-import { utils, BigNumber } from '@/const';
+import { utils, BigNumber,log } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -92,11 +92,20 @@ export default class MyMessage extends Vue {
   status: MessageStatus = MessageStatus.loading;
   messageList: Array<Message | SendMessage> = [];
 
-  get_loading(){
-    if(this.status == MessageStatus.loading || this.status == MessageStatus.geting){
-      return true
-    }else{
-      return false
+  get_name(message: Message) {
+    log('get_name', this.appAsync.USD_Value_Map[message.sender]);
+    if (this.appAsync.USD_Value_Map[message.sender] != 0) {
+      return this.appAsync.USD_Value_Map[message.sender].toFixed(2) + ' USD';
+    } else {
+      return utils.format.address(message.sender);
+    }
+  }
+
+  get_loading() {
+    if (this.status == MessageStatus.loading || this.status == MessageStatus.geting) {
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -240,9 +249,12 @@ export default class MyMessage extends Vue {
   }
 
   getMessage() {
-    this.$store.dispatch('chat/getMessage',[undefined,()=>{
-      this.status = MessageStatus.geting;
-    }]);
+    this.$store.dispatch('chat/getMessage', [
+      undefined,
+      () => {
+        this.status = MessageStatus.geting;
+      },
+    ]);
   }
 
   scrollToBottom() {

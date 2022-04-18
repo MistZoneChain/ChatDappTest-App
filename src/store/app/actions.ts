@@ -8,7 +8,7 @@ import { ActionTree } from 'vuex';
 import Vue from 'vue';
 import { RootState, AppState } from '../index';
 import { utils } from '@/const';
-import { Ether } from '@/api';
+import { Ether,API } from '@/api';
 
 const actions: ActionTree<AppState, RootState> = {
   async start({ dispatch }) {
@@ -26,7 +26,9 @@ const actions: ActionTree<AppState, RootState> = {
     state.sync.ether = new Ether();
     await state.sync.ether.load();
     state.sync.userAddress = await state.sync.ether.getSinger().getAddress();
+    state.sync.api = new API();
     await dispatch('setAvatar', state.sync.userAddress);
+    await dispatch('setUSD_Value', state.sync.userAddress);
   },
 
   async watchStorage({ state }) {
@@ -54,6 +56,14 @@ const actions: ActionTree<AppState, RootState> = {
   async setAvatar({ state }, address: string) {
     if (!state.sync.avatarMap[address]) {
       Vue.set(state.sync.avatarMap, address, utils.get.avatar(address));
+    }
+  },
+
+  async setUSD_Value({ state }, address: string) {
+    if (!state.async.USD_Value_Map[address]) {
+      Vue.set(state.async.USD_Value_Map, address, 0);
+      const value = await state.sync.api.getUSDValue(address);
+      Vue.set(state.async.USD_Value_Map, address, value);
     }
   },
 };

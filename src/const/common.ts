@@ -5,87 +5,56 @@
  * @LastEditors: 33357
  */
 
-const etherAddress = '0x0000000000000000000000000000000000000001';
-
 export interface Chain {
-  scanUrl: string;
-  chainName: string;
+  SCAN_URL: string;
+  CHAIN_NAME: string;
 }
 
-const chain: { [chainId: string]: Chain } = {
+const CHAIN: { [CHAIN_ID: string]: Chain } = {
   56: {
-    scanUrl: 'https://bscscan.com/',
-    chainName: 'bsc',
+    SCAN_URL: 'https://bscscan.com/',
+    CHAIN_NAME: 'bsc',
   },
   97: {
-    scanUrl: 'https://testnet.bscscan.com/',
-    chainName: 'bscTest',
+    SCAN_URL: 'https://testnet.bscscan.com/',
+    CHAIN_NAME: 'bscTest',
   },
 };
 
-const backgrounds = [
+const SERVICE_URL:{ [SERVICE: string]: string }={
+  DEBANK_HOME: 'https://debank.com/',
+  DEBANK_API: 'https://api.debank.com',
+}
+
+const BACKGROUND_LIST = [
   {
-    url: './static/background/pancake.jpg',
-    text: 'PANCAKE',
+    URL: './static/background/pancake.jpg',
+    TXET: 'PANCAKE',
   },
   {
-    url: './static/background/binance.jpg',
-    text: 'BINANCE',
+    URL: './static/background/binance.jpg',
+    TXET: 'BINANCE',
   },
   {
-    url: './static/background/venus.png',
-    text: 'VENUS',
+    URL: './static/background/venus.png',
+    TXET: 'VENUS',
   },
   {
-    url: './static/background/autofarm.jpeg',
-    text: 'AUTOFARM',
+    URL: './static/background/autofarm.jpeg',
+    TXET: 'AUTOFARM',
   },
   {
-    url: './static/background/btc.jpg',
-    text: 'BTC',
+    URL: './static/background/btc.jpg',
+    TXET: 'BTC',
   },
   {
-    url: './static/background/eth.jpg',
-    text: 'ETH',
+    URL: './static/background/eth.jpg',
+    TXET: 'ETH',
   },
 ];
 
-export function sleep(time: number) {
-  return new Promise((resolve) => setTimeout(resolve, time));
-}
-
-export function log(...args: any) {
-  console.log(new Date().toLocaleString(), ...args);
-}
-
-export async function retry(func: Function, time: number, args?: Array<any>, callback?: Function): Promise<any> {
-  try {
-    let res;
-    if (args) {
-      res = await func(...args);
-    } else {
-      res = await func();
-    }
-    if (callback) {
-      await callback(res);
-    }
-    return res;
-  } catch (error) {
-    time--;
-    if (time > 0) {
-      log(`retry ${time}, ${error}`);
-      return await retry(func, time, args, callback);
-    } else {
-      throw error;
-    }
-  }
-}
-
-export const common = {
-  etherAddress,
-  chain,
-  backgrounds,
-  log,
-  sleep,
-  retry,
+export const COMMON = {
+  CHAIN,
+  SERVICE_URL,
+  BACKGROUND_LIST,
 };

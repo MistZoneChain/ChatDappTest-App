@@ -37,7 +37,7 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
 import { AppSync, AppAsync, AppStorage, ChatSync, ChatAsync } from '@/store';
-import { utils, common } from '@/const';
+import { utils, log} from '@/const';
 import MyAvatar from '@/components/Avatar.vue';
 
 const chatModule = namespace('chat');
