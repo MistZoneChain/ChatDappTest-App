@@ -57,8 +57,8 @@ export default class MySearch extends Vue {
   }
 
   async selectChat(recipientText: string) {
-    await this.$store.dispatch('chat/setActiveRecipient', recipientText);
     this.searchData = {};
+    await this.$store.dispatch('chat/setActiveRecipient', recipientText);
   }
 }
 </script>
