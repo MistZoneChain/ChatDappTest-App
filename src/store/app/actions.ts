@@ -8,7 +8,7 @@ import { ActionTree } from 'vuex';
 import Vue from 'vue';
 import { RootState, AppState } from '../index';
 import { utils } from '@/const';
-import { Ether,API } from '@/api';
+import { Ether, API } from '@/api';
 
 const actions: ActionTree<AppState, RootState> = {
   async start({ dispatch }) {

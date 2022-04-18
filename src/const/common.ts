@@ -21,10 +21,10 @@ const CHAIN: { [CHAIN_ID: string]: Chain } = {
   },
 };
 
-const SERVICE_URL:{ [SERVICE: string]: string }={
+const SERVICE_URL: { [SERVICE: string]: string } = {
   DEBANK_HOME: 'https://debank.com/',
   DEBANK_API: 'https://api.debank.com',
-}
+};
 
 const BACKGROUND_LIST = [
   {

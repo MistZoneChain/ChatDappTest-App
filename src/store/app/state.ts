@@ -21,7 +21,7 @@ export interface AppSync {
   isMobile: boolean;
   avatarMap: { [address: string]: string };
   ether: Ether;
-  api:API;
+  api: API;
 }
 
 export interface AppAsync {
@@ -51,7 +51,7 @@ const appState: AppState = {
     isMobile: false,
     avatarMap: {},
     ether: new Ether(),
-    api:new API(),
+    api: new API(),
   },
   async: {
     USD_Value_Map: {},
