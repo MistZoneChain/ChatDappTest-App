@@ -9,7 +9,7 @@
 
     <myIcon type="language" class="icon tool-language" @click="$i18n.locale == 'cn' ? ($i18n.locale = 'en') : ($i18n.locale = 'cn')" />
     <a-icon type="skin" class="tool-skin icon" @click="showBackgroundModal = true" />
-    <a href="https://chatdao.org" target="_blank" class="tool-home icon"><a-icon type="home"/></a>
+    <a href="https://blockchat.space" target="_blank" class="tool-home icon"><a-icon type="home"/></a>
 
     <a-modal :title="$t('tool.user_info')" :visible="showUserModal" footer="" @cancel="showUserModal = false">
       <div class="tool-user">

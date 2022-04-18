@@ -38,6 +38,7 @@ import MyMessage from '@/components/Message.vue';
 import MySearch from '@/components/Search.vue';
 import { namespace } from 'vuex-class';
 import { AppStorage, AppSync } from '@/store';
+import { log } from '@/const';
 const appModule = namespace('app');
 
 @Component({
@@ -56,18 +57,18 @@ export default class MyChat extends Vue {
   visibleTool: boolean = true;
 
   async created() {
-    if (this.appSync.isMobile) {
-      this.visibleDrawer = true;
-      this.visibleTool = false;
-    }
     window.addEventListener('load', async () => {
       try {
-        console.log('window load');
+        log('window load');
         await this.$store.dispatch('app/start');
+        if (this.appSync.isMobile) {
+          this.visibleDrawer = true;
+          this.visibleTool = false;
+        }
         await this.$store.dispatch('chat/start');
         // eslint-disable-next-line prettier/prettier
       } catch (err:any) {
-        console.log(err);
+        log(err);
         this.$message.error(err.message);
       }
     });
