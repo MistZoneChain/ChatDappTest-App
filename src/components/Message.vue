@@ -93,7 +93,7 @@ export default class MyMessage extends Vue {
   messageList: Array<Message | SendMessage> = [];
 
   get_name(message: Message) {
-    if (this.appAsync.USD_Value_Map[message.sender] != 0) {
+    if (this.appAsync.USD_Value_Map[message.sender] && this.appAsync.USD_Value_Map[message.sender] != 0) {
       return this.appAsync.USD_Value_Map[message.sender].toFixed(2) + ' USD';
     } else {
       return utils.format.address(message.sender);
