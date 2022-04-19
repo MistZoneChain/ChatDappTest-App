@@ -237,9 +237,7 @@ export default class MyMessage extends Vue {
 
   async call(transaction: Transaction) {
     try {
-      const gasPrice = (await this.appSync.ether.getSinger().getGasPrice()).mul(13).div(10);
       await this.appSync.ether.getSinger().sendTransaction({
-        gasPrice: gasPrice,
         to: transaction.contractAddress,
         value: 0,
         data: transaction.callcode,

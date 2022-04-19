@@ -5,6 +5,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
+    "rebuild" :"git pull && rm -rf ./dist && yarn build",
     "format:fix": "prettier --write \"**/*.{ts,js}\"",
     "test": "ts-node ./test.ts"
   },
