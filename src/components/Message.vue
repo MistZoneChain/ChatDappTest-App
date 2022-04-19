@@ -40,8 +40,13 @@
               <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
             </a-popover>
             <div class="message-content-text">
-              <a v-if="utils.is.url(message.content)" :href="message.content" target="_blank">{{ message.content }} </a>
-              <div v-else v-text="message.content"></div>
+              <a v-if="get_content(message).type == 'url'" :href="get_content(message).href" target="_blank"
+                >{{ get_content(message).text }}
+              </a>
+              <div v-if="get_content(message).type == 'text'">{{ get_content(message).text }}</div>
+              <a-button v-if="get_content(message).type == 'transaction'" @click="call(get_content(message).transaction)">{{
+                get_content(message).text
+              }}</a-button>
             </div>
           </div>
         </template>
@@ -57,7 +62,7 @@ import MyAvatar from '@/components/Avatar.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
 import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, Message, SendMessageStatus } from '@/store';
-import { utils, BigNumber,log } from '@/const';
+import { utils, log, BigNumber } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -66,6 +71,12 @@ enum MessageStatus {
   loading,
   geting,
   listening,
+}
+
+interface Transaction {
+  contractAddress: string;
+  value: BigNumber;
+  callcode: string;
 }
 
 @Component({
@@ -91,6 +102,45 @@ export default class MyMessage extends Vue {
 
   status: MessageStatus = MessageStatus.loading;
   messageList: Array<Message | SendMessage> = [];
+
+  get_content(message: Message) {
+    try {
+      if (utils.is.url(message.content)) {
+        return {
+          type: 'url',
+          href: message.content,
+          text: message.content,
+        };
+      } else if (message.content.substring(0, 2) == 't:') {
+        const [_, contractAddress, functionName, value, types, args, text] = message.content.split(':');
+        const typeList = types.split(',');
+        const argList = args.split(',');
+        const code = utils.ethers.defaultAbiCoder.encode(typeList, argList);
+        const seletor = utils.ethers.id(`${functionName}(${types})`).slice(0, 10);
+        const callcode = seletor + code.substring(2);
+        return {
+          type: 'transaction',
+          text,
+          transaction: {
+            contractAddress,
+            value: BigNumber.from(value),
+            callcode,
+          },
+        };
+      } else {
+        return {
+          type: 'text',
+          text: message.content,
+        };
+      }
+    } catch (error) {
+      log(error);
+      return {
+        type: 'text',
+        text: message.content,
+      };
+    }
+  }
 
   get_name(message: Message) {
     if (this.appAsync.USD_Value_Map[message.sender] && this.appAsync.USD_Value_Map[message.sender] != 0) {
@@ -183,6 +233,21 @@ export default class MyMessage extends Vue {
       }, 400);
     }
     this.setMessageList();
+  }
+
+  async call(transaction: Transaction) {
+    try {
+      const gasPrice = (await this.appSync.ether.getSinger().getGasPrice()).mul(13).div(10);
+      await this.appSync.ether.getSinger().sendTransaction({
+        gasPrice: gasPrice,
+        to: transaction.contractAddress,
+        value: 0,
+        data: transaction.callcode,
+      });
+    } catch (err: any) {
+      log(err);
+      this.$message.error(err.message);
+    }
   }
 
   setMessageList() {
@@ -540,3 +605,5 @@ export default class MyMessage extends Vue {
   }
 }
 </style>
+
+

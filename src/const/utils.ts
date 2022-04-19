@@ -1,17 +1,22 @@
 import Vue from 'vue';
-
 import { COMMON } from '.';
-
-export { utils as etherUtils, BigNumber } from 'ethers';
-
 import Identicon from 'identicon.js';
-import { BigNumber } from 'ethers';
+import { BigNumber, utils as ethers } from 'ethers';
 
 const have = {
   value(obj: any) {
     return obj && Object.keys(obj).length != 0;
   },
 };
+
+const convert = {
+  hexStringToBase64(hexString: string) {
+    return Buffer.from(hexString.substring(2), 'hex').toString('base64');
+  },
+  Base64ToHexString(base64: string) {
+    return '0x' + Buffer.from(base64, 'base64').toString('hex');
+  }
+}
 
 export function sleep(time: number) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -170,4 +175,8 @@ export const utils = {
   have,
   format,
   go,
+  convert,
+  ethers
 };
+
+export { BigNumber } from 'ethers';
