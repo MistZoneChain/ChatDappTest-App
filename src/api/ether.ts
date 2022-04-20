@@ -74,6 +74,8 @@ export class Ether {
               }
             }]
           })
+        }else{
+          throw error;
         }
       }
     } else if (this.provider) {
