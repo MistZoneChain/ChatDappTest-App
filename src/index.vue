@@ -61,7 +61,7 @@ export default class MyChat extends Vue {
       try {
         log('window load');
         await this.$store.dispatch('app/start');
-        if(this.$route.query.r){
+        if (this.$route.query.r) {
           await this.$store.dispatch('chat/setActiveRecipient', this.$route.query.r);
         }
         if (this.appSync.isMobile) {
@@ -70,7 +70,7 @@ export default class MyChat extends Vue {
         }
         await this.$store.dispatch('chat/start');
         // eslint-disable-next-line prettier/prettier
-      } catch (err:any) {
+      } catch (err: any) {
         log(err);
         this.$message.error(err.message);
       }
