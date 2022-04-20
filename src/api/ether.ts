@@ -15,7 +15,7 @@ export class Ether {
   public provider: Web3Provider | JsonRpcProvider | undefined;
   public blockchat = new EtherBlockChatUpgradeableClient();
 
-  constructor() {}
+  constructor() { }
 
   async load() {
     let provider: any = await detectEthereumProvider();
@@ -39,22 +39,45 @@ export class Ether {
         }
         this.provider = new ethers.providers.Web3Provider(this._ethereum);
         this.singer = this.provider.getSigner();
-        this.setContracts();
+        await this.setContracts();
         this.chainId = await this.singer.getChainId();
       }
     } else {
       log('Please use a browser that supports web3 to open');
       this.provider = new ethers.providers.JsonRpcProvider(COMMON.CHAIN[this._defaultChainId].NODE_URL);
-      this.setContracts();
+      await this.setContracts();
       this.chainId = (await this.provider.getNetwork()).chainId;
     }
   }
 
-  setContracts() {
+  async setContracts() {
     if (this.singer) {
-      this.blockchat.connect(this.singer, undefined, 1);
+      try {
+        await this.blockchat.connect(this.singer, undefined, 1);
+      } catch (error) {
+        if (this._ethereum) {
+          this._ethereum.request({
+            method: 'wallet_addEthereumChain', // Metamask的api名称
+            params: [{
+              chainId: "0x38", // 网络id，16进制的字符串
+              chainName: "Binance Smart Chain Mainnet", // 添加到钱包后显示的网络名称
+              rpcUrls: [
+                'https://bsc-dataseed1.binance.org/', // rpc地址
+              ],
+              blockExplorerUrls: [
+                'https://bscscan.com/' // 网络对应的区块浏览器
+              ],
+              nativeCurrency: {  // 网络主币的信息
+                name: 'BNB',
+                symbol: 'BNB',
+                decimals: 18
+              }
+            }]
+          })
+        }
+      }
     } else if (this.provider) {
-      this.blockchat.connect(this.provider, undefined, 1);
+      await this.blockchat.connect(this.provider, undefined, 1);
     } else {
       throw new Error('no singer or provider');
     }
