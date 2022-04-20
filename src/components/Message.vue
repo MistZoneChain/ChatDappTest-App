@@ -44,7 +44,11 @@
                 >{{ get_content(message).text }}
               </a>
               <div v-if="get_content(message).type == 'text'">{{ get_content(message).text }}</div>
-              <a-button v-if="get_content(message).type == 'transaction'" @click="call(get_content(message).transaction)">{{
+              <a-button v-if="get_content(message).type == 'transaction'" @click="sendTransaction(get_content(message).transaction)">{{
+                get_content(message).text
+              }}</a-button>
+              <!-- <div v-if="get_content(message).type == 'call'">{{ call(get_content(message).transaction) }}</div> -->
+              <a-button v-if="get_content(message).type == 'call'" @click="call(get_content(message).transaction)">{{
                 get_content(message).text
               }}</a-button>
             </div>
@@ -77,6 +81,12 @@ interface Transaction {
   contractAddress: string;
   value: BigNumber;
   callcode: string;
+}
+
+interface Call {
+  contractAddress: string;
+  callcode: string;
+  returnTypeList: Array<string>;
 }
 
 @Component({
@@ -113,8 +123,14 @@ export default class MyMessage extends Vue {
         };
       } else if (message.content.substring(0, 2) == 't:') {
         const [_, contractAddress, functionName, value, types, args, text] = message.content.split(':');
-        const typeList = types.split(',');
-        const argList = args.split(',');
+        let typeList = [types];
+        if (types.indexOf(',') != -1) {
+          typeList = types.split(',');
+        }
+        let argList = [args];
+        if (args.indexOf(',') != -1) {
+          argList = args.split(',');
+        }
         const code = utils.ethers.defaultAbiCoder.encode(typeList, argList);
         const seletor = utils.ethers.id(`${functionName}(${types})`).slice(0, 10);
         const callcode = seletor + code.substring(2);
@@ -125,6 +141,33 @@ export default class MyMessage extends Vue {
             contractAddress,
             value: BigNumber.from(value),
             callcode,
+          },
+        };
+      } else if (message.content.substring(0, 2) == 'c:') {
+        const [_, contractAddress, functionName, types, args, returnTypes, text] = message.content.split(':');
+        log(contractAddress, functionName, types, args, returnTypes, text)
+        let typeList = [types];
+        if (types.indexOf(',') != -1) {
+          typeList = types.split(',');
+        }
+        let argList = [args];
+        if (args.indexOf(',') != -1) {
+          argList = args.split(',');
+        }
+        let returnTypeList = [returnTypes];
+        if (returnTypes.indexOf(',') != -1) {
+          returnTypeList = returnTypes.split(',');
+        }
+        const code = utils.ethers.defaultAbiCoder.encode(typeList, argList);
+        const seletor = utils.ethers.id(`${functionName}(${types})`).slice(0, 10);
+        const callcode = seletor + code.substring(2);
+        return {
+          type: 'call',
+          text,
+          transaction: {
+            contractAddress,
+            callcode,
+            returnTypeList,
           },
         };
       } else {
@@ -235,13 +278,28 @@ export default class MyMessage extends Vue {
     this.setMessageList();
   }
 
-  async call(transaction: Transaction) {
+  async sendTransaction(transaction: Transaction) {
     try {
       await this.appSync.ether.getSinger().sendTransaction({
         to: transaction.contractAddress,
         value: 0,
         data: transaction.callcode,
       });
+    } catch (err: any) {
+      log(err);
+      this.$message.error(err.message);
+    }
+  }
+
+  async call(call: Call) {
+    try {
+      const res = await this.appSync.ether.getSinger().call({
+        to: call.contractAddress,
+        data: call.callcode,
+      });
+      const data = utils.ethers.defaultAbiCoder.decode(call.returnTypeList,res)
+      log(data.toString());
+      return data.toString();
     } catch (err: any) {
       log(err);
       this.$message.error(err.message);
