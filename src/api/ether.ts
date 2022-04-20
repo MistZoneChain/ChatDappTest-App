@@ -1,22 +1,24 @@
-import { EtherBlockChatUpgradeableClient, DeploymentInfo } from 'blockchat-contract-sdk';
+import { EtherBlockChatUpgradeableClient } from 'blockchat-contract-sdk';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { ethers, Signer } from 'ethers';
-import { Web3Provider } from '@ethersproject/providers';
+import { COMMON, log } from '@/const';
+import { Web3Provider, JsonRpcProvider } from '@ethersproject/providers';
 import * as ethUtil from 'ethereumjs-util';
 import * as sigUtil from '@metamask/eth-sig-util';
 import * as naclUtil from 'tweetnacl-util';
 
 export class Ether {
-  private _singer: Signer | undefined;
-  private _chainId: number | undefined;
-  private _provider: Web3Provider | undefined;
-  private _blockchat: EtherBlockChatUpgradeableClient | undefined;
   private _ethereum: any;
+  private _defaultChainId = 56;
+  public singer: Signer | undefined;
+  public chainId: number | undefined;
+  public provider: Web3Provider | JsonRpcProvider | undefined;
+  public blockchat = new EtherBlockChatUpgradeableClient();
 
   constructor() {}
 
   async load() {
-    const provider: any = await detectEthereumProvider();
+    let provider: any = await detectEthereumProvider();
     if (provider) {
       if (provider != window.ethereum) {
         throw new Error('Have you installed multiple wallets');
@@ -35,45 +37,27 @@ export class Ether {
             throw new Error('Connection refused');
           }
         }
-        this._provider = new ethers.providers.Web3Provider(this._ethereum);
-        this._singer = this._provider.getSigner();
-        if (this._singer) {
-          this.setContracts();
-          this._chainId = await this._singer.getChainId();
-        }
+        this.provider = new ethers.providers.Web3Provider(this._ethereum);
+        this.singer = this.provider.getSigner();
+        this.setContracts();
+        this.chainId = await this.singer.getChainId();
       }
     } else {
-      throw new Error('Please use a browser that supports web3 to open');
+      log('Please use a browser that supports web3 to open');
+      this.provider = new ethers.providers.JsonRpcProvider(COMMON.CHAIN[this._defaultChainId].NODE_URL);
+      this.setContracts();
+      this.chainId = (await this.provider.getNetwork()).chainId;
     }
   }
 
   setContracts() {
-    if (!this._singer) {
-      throw new Error('no provider or singer');
+    if (this.singer) {
+      this.blockchat.connect(this.singer, undefined, 1);
+    } else if (this.provider) {
+      this.blockchat.connect(this.provider, undefined, 1);
+    } else {
+      throw new Error('no singer or provider');
     }
-    this._blockchat = new EtherBlockChatUpgradeableClient();
-    this._blockchat.connect(this._singer, undefined, 1);
-  }
-
-  getSinger() {
-    if (!this._singer) {
-      throw new Error('no singer');
-    }
-    return this._singer;
-  }
-
-  getChainId() {
-    if (!this._chainId) {
-      throw new Error('no chainId');
-    }
-    return this._chainId;
-  }
-
-  getBlockChat() {
-    if (!this._blockchat) {
-      throw new Error('no blockchat');
-    }
-    return this._blockchat;
   }
 
   P2P = {
@@ -163,16 +147,16 @@ export class Ether {
       return sigUtil.getEncryptionPublicKey(privateKey);
     },
     getBalance: (address: string) => {
-      if (!this._provider) {
+      if (!this.provider) {
         throw new Error('no provider');
       }
-      return this._provider.getBalance(address);
+      return this.provider.getBalance(address);
     },
     isContract: async (address: string) => {
-      if (!this._provider) {
+      if (!this.provider) {
         throw new Error('no provider');
       }
-      const code = await this._provider.getCode(address);
+      const code = await this.provider.getCode(address);
       if (code == '0x') {
         return false;
       }

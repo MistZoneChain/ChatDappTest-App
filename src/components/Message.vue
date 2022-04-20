@@ -113,6 +113,8 @@ export default class MyMessage extends Vue {
   status: MessageStatus = MessageStatus.loading;
   messageList: Array<Message | SendMessage> = [];
 
+  showMessageList: Array<any> = [];
+
   get_content(message: Message) {
     try {
       if (utils.is.url(message.content)) {
@@ -145,7 +147,7 @@ export default class MyMessage extends Vue {
         };
       } else if (message.content.substring(0, 2) == 'c:') {
         const [_, contractAddress, functionName, types, args, returnTypes, text] = message.content.split(':');
-        log(contractAddress, functionName, types, args, returnTypes, text)
+        log(contractAddress, functionName, types, args, returnTypes, text);
         let typeList = [types];
         if (types.indexOf(',') != -1) {
           typeList = types.split(',');
@@ -280,11 +282,13 @@ export default class MyMessage extends Vue {
 
   async sendTransaction(transaction: Transaction) {
     try {
-      await this.appSync.ether.getSinger().sendTransaction({
-        to: transaction.contractAddress,
-        value: 0,
-        data: transaction.callcode,
-      });
+      if (this.appSync.ether.singer) {
+        await this.appSync.ether.singer.sendTransaction({
+          to: transaction.contractAddress,
+          value: 0,
+          data: transaction.callcode,
+        });
+      }
     } catch (err: any) {
       log(err);
       this.$message.error(err.message);
@@ -293,13 +297,15 @@ export default class MyMessage extends Vue {
 
   async call(call: Call) {
     try {
-      const res = await this.appSync.ether.getSinger().call({
-        to: call.contractAddress,
-        data: call.callcode,
-      });
-      const data = utils.ethers.defaultAbiCoder.decode(call.returnTypeList,res)
-      log(data.toString());
-      return data.toString();
+      if (this.appSync.ether.provider) {
+        const res = await this.appSync.ether.provider.call({
+          to: call.contractAddress,
+          data: call.callcode,
+        });
+        const data = utils.ethers.defaultAbiCoder.decode(call.returnTypeList, res);
+        log(data.toString());
+        return data.toString();
+      }
     } catch (err: any) {
       log(err);
       this.$message.error(err.message);

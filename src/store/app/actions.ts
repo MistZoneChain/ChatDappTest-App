@@ -25,7 +25,9 @@ const actions: ActionTree<AppState, RootState> = {
     state.sync.isMobile = utils.is.mobile();
     state.sync.ether = new Ether();
     await state.sync.ether.load();
-    state.sync.userAddress = await state.sync.ether.getSinger().getAddress();
+    if (state.sync.ether.singer) {
+      state.sync.userAddress = await state.sync.ether.singer.getAddress();
+    }
     state.sync.api = new API();
     await dispatch('setAvatar', state.sync.userAddress);
     await dispatch('setUSD_Value', state.sync.userAddress);

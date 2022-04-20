@@ -15,8 +15,8 @@ const convert = {
   },
   Base64ToHexString(base64: string) {
     return '0x' + Buffer.from(base64, 'base64').toString('hex');
-  }
-}
+  },
+};
 
 export function sleep(time: number) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -176,7 +176,7 @@ export const utils = {
   format,
   go,
   convert,
-  ethers
+  ethers,
 };
 
 export { BigNumber } from 'ethers';

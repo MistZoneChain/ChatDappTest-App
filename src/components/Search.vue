@@ -46,9 +46,9 @@ export default class MySearch extends Vue {
   searchData: { recipientText?: string; recipientHash?: string; recipientMessageIdLength?: number } = {};
 
   async handleSearch(recipientText: string) {
-    const recipientHash = this.appSync.ether.getBlockChat().recipientHash(recipientText).toString();
+    const recipientHash = this.appSync.ether.blockchat.recipientHash(recipientText).toString();
     await this.$store.dispatch('app/setAvatar', recipientHash);
-    const recipientMessageIdLength = (await this.appSync.ether.getBlockChat().getRecipientMessageListLength(recipientHash)).toNumber();
+    const recipientMessageIdLength = (await this.appSync.ether.blockchat.getRecipientMessageListLength(recipientHash)).toNumber();
     this.searchData = {
       recipientText,
       recipientHash,

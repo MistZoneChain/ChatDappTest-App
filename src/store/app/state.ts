@@ -47,7 +47,7 @@ const appState: AppState = {
     messageLimit: 10,
   },
   sync: {
-    userAddress: '',
+    userAddress: COMMON.ZERO_ADDRESS,
     isMobile: false,
     avatarMap: {},
     ether: new Ether(),
