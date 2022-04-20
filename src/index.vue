@@ -61,6 +61,9 @@ export default class MyChat extends Vue {
       try {
         log('window load');
         await this.$store.dispatch('app/start');
+        if(this.$route.query.r){
+          await this.$store.dispatch('chat/setActiveRecipient', this.$route.query.r);
+        }
         if (this.appSync.isMobile) {
           this.visibleDrawer = true;
           this.visibleTool = false;
