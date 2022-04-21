@@ -1,6 +1,6 @@
 import { EtherBlockChatUpgradeableClient } from 'blockchat-contract-sdk';
 import detectEthereumProvider from '@metamask/detect-provider';
-import { ethers, Signer } from 'ethers';
+import { ethers, Signer, Wallet } from 'ethers';
 import { COMMON, log } from '@/const';
 import { Web3Provider, JsonRpcProvider } from '@ethersproject/providers';
 import * as ethUtil from 'ethereumjs-util';
@@ -15,7 +15,7 @@ export class Ether {
   public provider: Web3Provider | JsonRpcProvider | undefined;
   public blockchat = new EtherBlockChatUpgradeableClient();
 
-  constructor() { }
+  constructor() {}
 
   async load() {
     let provider: any = await detectEthereumProvider();
@@ -58,23 +58,26 @@ export class Ether {
         if (this._ethereum) {
           this._ethereum.request({
             method: 'wallet_addEthereumChain', // Metamask的api名称
-            params: [{
-              chainId: "0x38", // 网络id，16进制的字符串
-              chainName: "Binance Smart Chain Mainnet", // 添加到钱包后显示的网络名称
-              rpcUrls: [
-                'https://bsc-dataseed1.binance.org/', // rpc地址
-              ],
-              blockExplorerUrls: [
-                'https://bscscan.com/' // 网络对应的区块浏览器
-              ],
-              nativeCurrency: {  // 网络主币的信息
-                name: 'BNB',
-                symbol: 'BNB',
-                decimals: 18
-              }
-            }]
-          })
-        }else{
+            params: [
+              {
+                chainId: '0x38', // 网络id，16进制的字符串
+                chainName: 'Binance Smart Chain Mainnet', // 添加到钱包后显示的网络名称
+                rpcUrls: [
+                  'https://bsc-dataseed1.binance.org/', // rpc地址
+                ],
+                blockExplorerUrls: [
+                  'https://bscscan.com/', // 网络对应的区块浏览器
+                ],
+                nativeCurrency: {
+                  // 网络主币的信息
+                  name: 'BNB',
+                  symbol: 'BNB',
+                  decimals: 18,
+                },
+              },
+            ],
+          });
+        } else {
           throw error;
         }
       }

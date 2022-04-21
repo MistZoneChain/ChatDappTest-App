@@ -65,7 +65,7 @@ import { Component, Vue, Watch } from 'vue-property-decorator';
 import MyAvatar from '@/components/Avatar.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
-import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, Message, SendMessageStatus } from '@/store';
+import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, Message,MessageToRecipientList, SendMessageStatus } from '@/store';
 import { utils, log, BigNumber } from '@/const';
 
 const chatModule = namespace('chat');
@@ -111,11 +111,11 @@ export default class MyMessage extends Vue {
   lastMessagePosition: number = 0;
 
   status: MessageStatus = MessageStatus.loading;
-  messageList: Array<Message | SendMessage> = [];
+  messageList: Array<Message | SendMessage | MessageToRecipientList> = [];
 
   showMessageList: Array<any> = [];
 
-  get_content(message: Message) {
+  get_content(message: Message | MessageToRecipientList) {
     try {
       if (utils.is.url(message.content)) {
         return {
@@ -187,7 +187,7 @@ export default class MyMessage extends Vue {
     }
   }
 
-  get_name(message: Message) {
+  get_name(message: Message | MessageToRecipientList) {
     if (this.appAsync.USD_Value_Map[message.sender] && this.appAsync.USD_Value_Map[message.sender] != 0) {
       return this.appAsync.USD_Value_Map[message.sender].toFixed(2) + ' USD';
     } else {
@@ -314,7 +314,7 @@ export default class MyMessage extends Vue {
 
   setMessageList() {
     if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
-      let messageList: Array<Message | SendMessage> = [];
+      let messageList: Array<Message | SendMessage | MessageToRecipientList> = [];
       let messageIdList: Array<BigNumber> = [];
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList.forEach((sendMessage) => {
         messageList.push(sendMessage);
@@ -330,7 +330,7 @@ export default class MyMessage extends Vue {
           messageList.push(this.chatAsync.messageMap[messageId.toString()]);
         });
       if (this.messageList.length != messageList.length) {
-        messageList = messageList.sort((message_a: Message, message_b: Message) => {
+        messageList = messageList.sort((message_a: Message | MessageToRecipientList, message_b: Message | MessageToRecipientList) => {
           return message_a.createDate.toNumber() - message_b.createDate.toNumber();
         });
         this.messageList = messageList;

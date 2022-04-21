@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers';
-import { Message } from 'blockchat-contract-sdk';
+import { Message, MessageToRecipientList } from 'blockchat-contract-sdk';
 
 /*
  * @Author: 33357
@@ -7,7 +7,7 @@ import { Message } from 'blockchat-contract-sdk';
  * @LastEditTime: 2021-03-02 21:06:42
  * @LastEditors: 33357
  */
-export { Message } from 'blockchat-contract-sdk';
+export { Message, MessageToRecipientList } from 'blockchat-contract-sdk';
 
 export enum SendMessageStatus {
   prePending,
@@ -31,7 +31,7 @@ export interface Recipient {
 }
 
 export interface MessageMap {
-  [messageId: string]: Message;
+  [messageId: string]: Message | MessageToRecipientList;
 }
 
 export interface RecipientMap {
