@@ -2550,10 +2550,10 @@ blakejs@^1.1.0:
   resolved "https://registry.yarnpkg.com/blakejs/-/blakejs-1.1.1.tgz#bf313053978b2cd4c444a48795710be05c785702"
   integrity sha512-bLG6PHOCZJKNshTjGRBvET0vTciwQE6zFKOKKXPDJfwFBd4Ac0yBfPZqcGvGJap50l7ktvlpFqc2jGVaUgbJgg==
 
-blockchat-contract-sdk@^0.2.4:
-  version "0.2.4"
-  resolved "https://registry.yarnpkg.com/blockchat-contract-sdk/-/blockchat-contract-sdk-0.2.4.tgz#0dbd1b0d0b7b617c68e2bf68c8b3cd670fb9acb8"
-  integrity sha512-F07v1WMoXXk4830eP9oFRDE5yuRm1OaC3f294+CdRQDhwruUuqqRq94ZSwUYzlpJUz0bD1Y0fpsOQFxVXq6eAQ==
+blockchat-contract-sdk@^0.2.5:
+  version "0.2.5"
+  resolved "https://registry.yarnpkg.com/blockchat-contract-sdk/-/blockchat-contract-sdk-0.2.5.tgz#36880e43545e23d4f6f99f83df180bde5e830874"
+  integrity sha512-SzDQWiCWMYCuzd9jzOV72f0+tcgG43fxxDH417kfMr6yMcGTDPU0DmcI5ZWNhO8plZHJtf11wqYwhAfGtO/9zw==
 
 bluebird@^3.1.1, bluebird@^3.5.0, bluebird@^3.5.5:
   version "3.7.2"
