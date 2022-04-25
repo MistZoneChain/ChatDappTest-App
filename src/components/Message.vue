@@ -224,9 +224,9 @@ export default class MyMessage extends Vue {
 
   get_message_header_text() {
     try {
-      return `${this.appStorage.activeRecipientText} 消息：${this.chatAsync.recipientMap[
-        this.appStorage.activeRecipientText
-      ].messageIdLength.toNumber()}`;
+      return `${this.appStorage.activeRecipientText} 消息：${
+        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength
+      }`;
     } catch (error) {
       return '';
     }
@@ -236,7 +236,7 @@ export default class MyMessage extends Vue {
     try {
       if (
         utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText]) &&
-        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength.toNumber() <=
+        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength <=
           this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList.length
       ) {
         return this.$t('message.no_more_message');
@@ -334,26 +334,24 @@ export default class MyMessage extends Vue {
   setMessageList() {
     if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
       let messageList: Array<BlockChatUpgrade2Model.MessageCreatedEvent | SendMessage> = [];
-      let messageIdList: Array<BigNumber> = [];
+      let messageIdList: Array<number> = [];
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList.forEach((sendMessage) => {
         messageList.push(sendMessage);
-        if (!sendMessage.messageId.eq(0)) {
+        if (sendMessage.messageId != 0) {
           messageIdList.push(sendMessage.messageId);
         }
       });
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList
         .filter((messageId) => {
-          return utils.have.value(this.chatAsync.messageCreatedEventMap[messageId.toString()]) && messageIdList.indexOf(messageId) == -1;
+          return utils.have.value(this.chatAsync.messageCreatedEventMap[messageId]) && messageIdList.indexOf(messageId) == -1;
         })
         .forEach((messageId) => {
-          messageList.push(this.chatAsync.messageCreatedEventMap[messageId.toString()]);
+          messageList.push(this.chatAsync.messageCreatedEventMap[messageId]);
         });
       if (this.messageList.length != messageList.length) {
-        messageList = messageList.sort(
-          (message_a: BlockChatUpgrade2Model.MessageCreatedEvent, message_b: BlockChatUpgrade2Model.MessageCreatedEvent) => {
-            return message_a.createDate.toNumber() - message_b.createDate.toNumber();
-          }
-        );
+        messageList = messageList.sort((message_a, message_b) => {
+          return message_a.createDate - message_b.createDate;
+        });
         this.messageList = messageList;
         this.checkMessageList();
       } else if (this.messageList.length == 0) {

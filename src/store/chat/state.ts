@@ -1,4 +1,3 @@
-import { BigNumber, BytesLike } from 'ethers';
 import { BlockChatUpgrade2Model } from 'blockchat-contract-sdk';
 
 /*
@@ -22,19 +21,19 @@ export interface SendMessage extends BlockChatUpgrade2Model.MessageCreatedEvent 
 }
 
 export interface Recipient {
-  messageIdLength: BigNumber;
-  messageIdList: Array<BigNumber>;
+  messageIdLength: number;
+  messageIdList: Array<number>;
   recipientHash: string;
   readIndex: number;
   sendMessageList: Array<SendMessage>;
 }
 
 export interface MessageMap {
-  [messageId: string]: BlockChatUpgrade2Model.Message;
+  [messageId: number]: BlockChatUpgrade2Model.Message;
 }
 
 export interface MessageCreatedEventMap {
-  [messageId: string]: BlockChatUpgrade2Model.MessageCreatedEvent;
+  [messageId: number]: BlockChatUpgrade2Model.MessageCreatedEvent;
 }
 
 export interface RecipientMap {
@@ -46,7 +45,7 @@ export interface ChatSync {}
 export interface ChatAsync {
   recipientMap: RecipientMap;
   messageMap: MessageMap;
-  messageCreatedEventMap:MessageCreatedEventMap;
+  messageCreatedEventMap: MessageCreatedEventMap;
 }
 
 export interface ChatState {
@@ -59,7 +58,7 @@ const chatState: ChatState = {
   async: {
     recipientMap: {},
     messageMap: {},
-    messageCreatedEventMap:{},
+    messageCreatedEventMap: {},
   },
 };
 

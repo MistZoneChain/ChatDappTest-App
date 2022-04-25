@@ -4,7 +4,7 @@ import { log, utils } from '@/const';
 import Vue from 'vue';
 import { BlockChatUpgrade2Model } from 'blockchat-contract-sdk';
 import { Recipient, SendMessage, SendMessageStatus } from '.';
-import { BigNumber, BigNumberish, ContractReceipt, ContractTransaction } from 'ethers';
+import { ContractReceipt, ContractTransaction } from 'ethers';
 
 const actions: ActionTree<ChatState, RootState> = {
   async start({ dispatch }) {
@@ -38,7 +38,12 @@ const actions: ActionTree<ChatState, RootState> = {
   async setRecipient({ state, rootState, dispatch }, recipientText: string) {
     if (!state.async.recipientMap[recipientText]) {
       Vue.set(state.async.recipientMap, recipientText, {});
-      const recipientHash = rootState.app.sync.ether.blockchat.recipientHash(recipientText);
+      let recipientHash;
+      if(utils.ethers.isAddress(recipientText)){
+        recipientHash = recipientText;
+      }else{
+        recipientHash = rootState.app.sync.ether.blockchat.recipientHash(recipientText);
+      }
       await dispatch('app/setAvatar', recipientHash.toString(), { root: true });
       const messageIdLength = await rootState.app.sync.ether.blockchat.getRecipientMessageListLength(recipientHash);
       const recipient: Recipient = {
@@ -57,12 +62,12 @@ const actions: ActionTree<ChatState, RootState> = {
     if (!recipientText) {
       recipientText = rootState.app.storage.activeRecipientText;
     }
-    if (state.async.recipientMap[recipientText].messageIdLength.toNumber() > state.async.recipientMap[recipientText].messageIdList.length) {
+    if (state.async.recipientMap[recipientText].messageIdLength > state.async.recipientMap[recipientText].messageIdList.length) {
       if (callback) {
         callback();
       }
       const recipient = state.async.recipientMap[recipientText];
-      let start = recipient.messageIdLength.toNumber() - recipient.messageIdList.length;
+      let start = recipient.messageIdLength - recipient.messageIdList.length;
       let length = rootState.app.storage.messageLimit;
       if (start < length) {
         length = start;
@@ -82,10 +87,10 @@ const actions: ActionTree<ChatState, RootState> = {
     }
   },
 
-  async setMessage({ state, rootState, dispatch }, messageIdList: Array<BigNumberish>) {
-    const getMessageIdList: Array<BigNumberish> = [];
-    messageIdList.forEach(async (messageId: BigNumberish) => {
-      if (!utils.have.value(state.async.messageMap[messageId.toString()])) {
+  async setMessage({ state, rootState, dispatch }, messageIdList: Array<number>) {
+    const getMessageIdList: Array<number> = [];
+    messageIdList.forEach(async (messageId: number) => {
+      if (!utils.have.value(state.async.messageMap[messageId])) {
         getMessageIdList.push(messageId);
         Vue.set(state.async.messageMap, messageId.toString(), {});
       }
@@ -94,11 +99,15 @@ const actions: ActionTree<ChatState, RootState> = {
       const messageList = await rootState.app.sync.ether.blockchat.batchMessage(getMessageIdList);
       messageList.forEach(async (message, index) => {
         Vue.set(state.async.messageMap, getMessageIdList[index].toString(), message);
-        const messageCreatedEvent = await rootState.app.sync.ether.blockchat.getMessage(getMessageIdList[index], message.createBlock.toNumber(), message.createBlock.toNumber())
+        const messageCreatedEvent = await rootState.app.sync.ether.blockchat.getMessage(
+          getMessageIdList[index],
+          message.createBlock,
+          message.createBlock
+        );
         Vue.set(state.async.messageCreatedEventMap, getMessageIdList[index].toString(), messageCreatedEvent[0]);
         await dispatch('app/setAvatar', messageCreatedEvent[0].sender, { root: true });
         await dispatch('app/setUSD_Value', messageCreatedEvent[0].sender, { root: true });
-      })
+      });
     }
   },
 
@@ -106,11 +115,11 @@ const actions: ActionTree<ChatState, RootState> = {
     const recipientText = rootState.app.storage.activeRecipientText;
     const sendMessage: SendMessage = {
       sender: rootState.app.sync.userAddress,
-      messageId: BigNumber.from(0),
+      messageId: 0,
       status: SendMessageStatus.prePending,
       recipientList: [state.async.recipientMap[recipientText].recipientHash],
       content,
-      createDate: BigNumber.from(new Date().getTime()).div(1000),
+      createDate: Number((new Date().getTime() / 1000).toFixed(0)),
     };
     const index = state.async.recipientMap[recipientText].sendMessageList.length;
     state.async.recipientMap[recipientText].sendMessageList.push(sendMessage);

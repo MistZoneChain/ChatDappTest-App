@@ -84,7 +84,7 @@ const get = {
   },
   avatar(address: string) {
     return 'data:image/png;base64,' + new Identicon(address, 120).toString();
-  }
+  },
 };
 
 const is = {

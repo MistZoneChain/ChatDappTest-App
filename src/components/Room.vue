@@ -88,8 +88,8 @@ export default class MyRoom extends Vue {
           utils.have.value(this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)])
         ) {
           return (
-            this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)].createDate.toNumber() -
-            this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)].createDate.toNumber()
+            this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)].createDate -
+            this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)].createDate
           );
         } else {
           if (utils.have.value(this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)])) {

@@ -15,7 +15,7 @@ export class Ether {
   public provider: Web3Provider | JsonRpcProvider | undefined;
   public blockchat = new EtherBlockChatUpgradeable2Client();
 
-  constructor() { }
+  constructor() {}
 
   async load() {
     let provider: any = await detectEthereumProvider();
@@ -203,6 +203,6 @@ export class Ether {
       } else {
         return 'string';
       }
-    }
+    },
   };
 }
