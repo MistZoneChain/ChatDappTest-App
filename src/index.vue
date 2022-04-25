@@ -56,7 +56,7 @@ export default class MyChat extends Vue {
   visibleDrawer: boolean = false;
   visibleTool: boolean = true;
 
-  async created() {
+  created() {
     window.addEventListener('load', async () => {
       try {
         log('window load');

@@ -60,8 +60,8 @@ export default class MyRoom extends Vue {
   get_room_card_new_text(recipientText: string) {
     try {
       return `[${utils.format.address(
-        this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText].messageIdList)].sender
-      )}]:${this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText].messageIdList)].content}`;
+        this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText].messageIdList)].sender
+      )}]:${this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText].messageIdList)].content}`;
     } catch (error) {
       return '';
     }
@@ -72,8 +72,8 @@ export default class MyRoom extends Vue {
     this.setRecipient();
   }
 
-  @Watch('chatAsync.messageMap', { deep: true })
-  changeMessageMap() {
+  @Watch('chatAsync.messageCreatedEventMap', { deep: true })
+  changeMessageCreatedEventMap() {
     this.setRecipient();
   }
 
@@ -84,15 +84,15 @@ export default class MyRoom extends Vue {
     if (recipientTextList.length >= 2) {
       recipientTextList = recipientTextList.sort((recipientText_a, recipientText_b) => {
         if (
-          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)]) &&
-          utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)])
+          utils.have.value(this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)]) &&
+          utils.have.value(this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)])
         ) {
           return (
-            this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)].createDate.toNumber() -
-            this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)].createDate.toNumber()
+            this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)].createDate.toNumber() -
+            this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)].createDate.toNumber()
           );
         } else {
-          if (utils.have.value(this.chatAsync.messageMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)])) {
+          if (utils.have.value(this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)])) {
             return -1;
           }
           return 1;

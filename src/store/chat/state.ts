@@ -1,5 +1,5 @@
-import { BigNumber } from 'ethers';
-import { Message, MessageToRecipientList } from 'blockchat-contract-sdk';
+import { BigNumber, BytesLike } from 'ethers';
+import { BlockChatUpgrade2Model } from 'blockchat-contract-sdk';
 
 /*
  * @Author: 33357
@@ -7,7 +7,7 @@ import { Message, MessageToRecipientList } from 'blockchat-contract-sdk';
  * @LastEditTime: 2021-03-02 21:06:42
  * @LastEditors: 33357
  */
-export { Message, MessageToRecipientList } from 'blockchat-contract-sdk';
+export { BlockChatUpgrade2Model } from 'blockchat-contract-sdk';
 
 export enum SendMessageStatus {
   prePending,
@@ -16,10 +16,9 @@ export enum SendMessageStatus {
   error,
 }
 
-export interface SendMessage extends Message {
+export interface SendMessage extends BlockChatUpgrade2Model.MessageCreatedEvent {
   status: SendMessageStatus;
   hash?: string;
-  messageId?: BigNumber;
 }
 
 export interface Recipient {
@@ -31,7 +30,11 @@ export interface Recipient {
 }
 
 export interface MessageMap {
-  [messageId: string]: Message | MessageToRecipientList;
+  [messageId: string]: BlockChatUpgrade2Model.Message;
+}
+
+export interface MessageCreatedEventMap {
+  [messageId: string]: BlockChatUpgrade2Model.MessageCreatedEvent;
 }
 
 export interface RecipientMap {
@@ -43,6 +46,7 @@ export interface ChatSync {}
 export interface ChatAsync {
   recipientMap: RecipientMap;
   messageMap: MessageMap;
+  messageCreatedEventMap:MessageCreatedEventMap;
 }
 
 export interface ChatState {
@@ -55,6 +59,7 @@ const chatState: ChatState = {
   async: {
     recipientMap: {},
     messageMap: {},
+    messageCreatedEventMap:{},
   },
 };
 

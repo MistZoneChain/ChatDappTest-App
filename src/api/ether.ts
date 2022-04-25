@@ -1,6 +1,6 @@
-import { EtherBlockChatUpgradeableClient } from 'blockchat-contract-sdk';
+import { EtherBlockChatUpgradeable2Client } from 'blockchat-contract-sdk';
 import detectEthereumProvider from '@metamask/detect-provider';
-import { ethers, Signer, Wallet } from 'ethers';
+import { ethers, Signer } from 'ethers';
 import { COMMON, log } from '@/const';
 import { Web3Provider, JsonRpcProvider } from '@ethersproject/providers';
 import * as ethUtil from 'ethereumjs-util';
@@ -13,9 +13,9 @@ export class Ether {
   public singer: Signer | undefined;
   public chainId: number | undefined;
   public provider: Web3Provider | JsonRpcProvider | undefined;
-  public blockchat = new EtherBlockChatUpgradeableClient();
+  public blockchat = new EtherBlockChatUpgradeable2Client();
 
-  constructor() {}
+  constructor() { }
 
   async load() {
     let provider: any = await detectEthereumProvider();
@@ -193,25 +193,16 @@ export class Ether {
   };
 
   utils = {
-    // getType: async (address: string) => {
-    //   if (address == common.etherAddress) {
-    //     return 'erc20';
-    //   } else if (await this.metamask.isContract(address)) {
-    //     try {
-    //       const erc20 = this.getERC20(address);
-    //       if (await erc20.decimals()) {
-    //         return 'erc20';
-    //       } else if (await erc20.totalSupply()) {
-    //         return 'erc721';
-    //       }
-    //       return 'contract';
-    //     } catch (err) {
-    //       console.log(err);
-    //       return 'contract';
-    //     }
-    //   } else {
-    //     return 'wallet';
-    //   }
-    // },
+    getType: async (str: string) => {
+      if (ethers.utils.isAddress(str)) {
+        if (await this.metamask.isContract(str)) {
+          return 'contract';
+        } else {
+          return 'wallet';
+        }
+      } else {
+        return 'string';
+      }
+    }
   };
 }

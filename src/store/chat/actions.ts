@@ -2,7 +2,7 @@ import { ActionTree } from 'vuex';
 import { RootState, ChatState } from '../index';
 import { log, utils } from '@/const';
 import Vue from 'vue';
-import { MessageCreatedEvent } from 'blockchat-contract-sdk';
+import { BlockChatUpgrade2Model } from 'blockchat-contract-sdk';
 import { Recipient, SendMessage, SendMessageStatus } from '.';
 import { BigNumber, BigNumberish, ContractReceipt, ContractTransaction } from 'ethers';
 
@@ -29,6 +29,10 @@ const actions: ActionTree<ChatState, RootState> = {
         log(err);
       }
     });
+    if (rootState.app.storage.recipientTextList.indexOf(rootState.app.sync.userAddress) == -1) {
+      rootState.app.storage.recipientTextList.push(rootState.app.sync.userAddress);
+      await dispatch('setRecipient', rootState.app.sync.userAddress);
+    }
   },
 
   async setRecipient({ state, rootState, dispatch }, recipientText: string) {
@@ -81,27 +85,30 @@ const actions: ActionTree<ChatState, RootState> = {
   async setMessage({ state, rootState, dispatch }, messageIdList: Array<BigNumberish>) {
     const getMessageIdList: Array<BigNumberish> = [];
     messageIdList.forEach(async (messageId: BigNumberish) => {
-      if (!state.async.messageMap[messageId.toString()]) {
+      if (!utils.have.value(state.async.messageMap[messageId.toString()])) {
         getMessageIdList.push(messageId);
         Vue.set(state.async.messageMap, messageId.toString(), {});
       }
     });
     if (getMessageIdList.length != 0) {
       const messageList = await rootState.app.sync.ether.blockchat.batchMessage(getMessageIdList);
-      for (let i = 0; i < messageList.length; i++) {
-        Vue.set(state.async.messageMap, getMessageIdList[i].toString(), messageList[i]);
-        await dispatch('app/setAvatar', messageList[i].sender, { root: true });
-        await dispatch('app/setUSD_Value', messageList[i].sender, { root: true });
-      }
+      messageList.forEach(async (message, index) => {
+        Vue.set(state.async.messageMap, getMessageIdList[index].toString(), message);
+        const messageCreatedEvent = await rootState.app.sync.ether.blockchat.getMessage(getMessageIdList[index], message.createBlock.toNumber(), message.createBlock.toNumber())
+        Vue.set(state.async.messageCreatedEventMap, getMessageIdList[index].toString(), messageCreatedEvent[0]);
+        await dispatch('app/setAvatar', messageCreatedEvent[0].sender, { root: true });
+        await dispatch('app/setUSD_Value', messageCreatedEvent[0].sender, { root: true });
+      })
     }
   },
 
   async sendMessage({ state, rootState }, content) {
     const recipientText = rootState.app.storage.activeRecipientText;
     const sendMessage: SendMessage = {
-      status: SendMessageStatus.prePending,
       sender: rootState.app.sync.userAddress,
-      recipient: state.async.recipientMap[recipientText].recipientHash,
+      messageId: BigNumber.from(0),
+      status: SendMessageStatus.prePending,
+      recipientList: [state.async.recipientMap[recipientText].recipientHash],
       content,
       createDate: BigNumber.from(new Date().getTime()).div(1000),
     };
@@ -109,7 +116,7 @@ const actions: ActionTree<ChatState, RootState> = {
     state.async.recipientMap[recipientText].sendMessageList.push(sendMessage);
     try {
       const message = await rootState.app.sync.ether.blockchat.createMessage(
-        sendMessage.recipient,
+        sendMessage.recipientList,
         sendMessage.content,
         {},
         (transaction: ContractTransaction | ContractReceipt) => {
@@ -129,11 +136,11 @@ const actions: ActionTree<ChatState, RootState> = {
   },
 
   async listenMessage({ state, rootState }) {
-    rootState.app.sync.ether.blockchat.listenMessage(async (event: MessageCreatedEvent) => {
+    rootState.app.sync.ether.blockchat.listenMessage(async (event: BlockChatUpgrade2Model.MessageCreatedEvent) => {
       try {
         const recipientTextList = Object.keys(state.async.recipientMap);
         for (let i = 0; i < recipientTextList.length; i++) {
-          if (state.async.recipientMap[recipientTextList[i]].recipientHash == event.recipient.toString()) {
+          if (state.async.recipientMap[recipientTextList[i]].recipientHash == event.recipientList.toString()) {
             state.async.recipientMap[recipientTextList[i]].messageIdList.push(event.messageId);
             break;
           }

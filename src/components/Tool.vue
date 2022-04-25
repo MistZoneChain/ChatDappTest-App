@@ -72,8 +72,6 @@ export default class MyTool extends Vue {
   backgroundInput: string = '';
   COMMON = COMMON;
 
-  created() {}
-
   changeBackground(background: string) {
     if (background.trim().length) {
       this.appStorage.background = background;

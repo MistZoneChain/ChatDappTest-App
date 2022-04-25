@@ -2,6 +2,7 @@ import Vue from 'vue';
 import { COMMON } from '.';
 import Identicon from 'identicon.js';
 import { BigNumber, utils as ethers } from 'ethers';
+import { Ether } from '@/api';
 
 const have = {
   value(obj: any) {
@@ -83,7 +84,7 @@ const get = {
   },
   avatar(address: string) {
     return 'data:image/png;base64,' + new Identicon(address, 120).toString();
-  },
+  }
 };
 
 const is = {
