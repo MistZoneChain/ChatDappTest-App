@@ -42,7 +42,7 @@ export interface RecipientMap {
   [recipientText: string]: Recipient;
 }
 
-export interface ChatSync { }
+export interface ChatSync {}
 
 export interface ChatAsync {
   recipientMap: RecipientMap;

@@ -52,7 +52,7 @@ const actions: ActionTree<ChatState, RootState> = {
         recipientHash: recipientHash,
         readIndex: 0,
         sendMessageList: [],
-        data:{},
+        data: {},
         useEncrypt: undefined,
       };
       Vue.set(state.async.recipientMap, recipientText, recipient);
@@ -130,8 +130,13 @@ const actions: ActionTree<ChatState, RootState> = {
 
   async sendMessage({ state, rootState }, content) {
     const recipientText = rootState.app.storage.activeRecipientText;
-    if(state.async.recipientMap[recipientText].useEncrypt){
-      content = 'e:'+ rootState.app.sync.ether.P2P.encrypt(content, state.async.messageCreatedEventMap[state.async.recipientMap[recipientText].data.publicKey].content);
+    if (state.async.recipientMap[recipientText].useEncrypt) {
+      content =
+        'e:' +
+        rootState.app.sync.ether.P2P.encrypt(
+          content,
+          state.async.messageCreatedEventMap[state.async.recipientMap[recipientText].data.publicKey].content
+        );
     }
     const sendMessage: SendMessage = {
       sender: rootState.app.sync.userAddress,

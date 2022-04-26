@@ -125,10 +125,10 @@ const format = {
     return moment(time).format('HH:mm:ss');
   },
 
-  date(time: BigNumber | Date) {
+  date(time: number | Date) {
     let moment = Vue.prototype.$moment;
-    if (time instanceof BigNumber) {
-      return moment(time.toNumber() * 1000).format('Y/M/D HH:mm:ss');
+    if (typeof time == 'number') {
+      return moment(time * 1000).format('Y/M/D HH:mm:ss');
     } else {
       return moment(time).format('Y/M/D HH:mm:ss');
     }
