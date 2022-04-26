@@ -131,7 +131,7 @@ export default class MyMessage extends Vue {
     log(this.appStorage.activeRecipientText, type);
     if (type == 'wallet') {
       this.lockData.show = true;
-    }else{
+    } else {
       this.lockData.show = false;
     }
   }
@@ -228,6 +228,8 @@ export default class MyMessage extends Vue {
     try {
       return `${this.appStorage.activeRecipientText} 消息：${
         this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength
+          ? this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength
+          : ''
       }`;
     } catch (error) {
       return '';
