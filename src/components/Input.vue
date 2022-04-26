@@ -20,7 +20,7 @@
       style="color: #000"
       @pressEnter="sendMessage"
     />
-    <myIcon type="send" :class="'message-input-button1'" @click="sendMessage" />
+    <myIcon type="send" :class="get_send()" @click="sendMessage" />
   </div>
 </template>
 
@@ -29,7 +29,7 @@ import { Component, Vue } from 'vue-property-decorator';
 import MyEmoji from '@/components/Emoji.vue';
 import { namespace } from 'vuex-class';
 import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync } from '@/store';
-import { log } from '@/const';
+import { log,utils } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -47,6 +47,16 @@ export default class MyInput extends Vue {
   @chatModule.State('async') chatAsync: ChatAsync;
 
   messageInput: string = '';
+
+  get_send() {
+    if(utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])){
+      if(this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt){
+        return 'message-input-button2'
+      }else{
+        return 'message-input-button1'
+      }
+    }
+  }
 
   /**
    * 消息发送前校验

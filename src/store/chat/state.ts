@@ -26,6 +26,8 @@ export interface Recipient {
   recipientHash: string;
   readIndex: number;
   sendMessageList: Array<SendMessage>;
+  data: { [name: string]: number };
+  useEncrypt: boolean | undefined;
 }
 
 export interface MessageMap {
@@ -40,7 +42,7 @@ export interface RecipientMap {
   [recipientText: string]: Recipient;
 }
 
-export interface ChatSync {}
+export interface ChatSync { }
 
 export interface ChatAsync {
   recipientMap: RecipientMap;

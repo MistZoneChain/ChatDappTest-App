@@ -24,6 +24,7 @@ export default {
     no_more_message: 'No more message ~',
     view_on_the_blockchain_browser: 'View on the blockchain browser',
     click_to_decrypt_message: 'Click to decrypt message',
+    encrypt_message: 'Encryption message',
   },
   avatar: {
     view_on_the_blockchain_browser: 'View on the blockchain browser',

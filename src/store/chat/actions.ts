@@ -40,7 +40,7 @@ const actions: ActionTree<ChatState, RootState> = {
       Vue.set(state.async.recipientMap, recipientText, {});
       let recipientHash;
       if (utils.ethers.isAddress(recipientText)) {
-        recipientHash = recipientText.toLowerCase();
+        recipientHash = recipientText;
       } else {
         recipientHash = rootState.app.sync.ether.blockchat.recipientHash(recipientText).toString();
       }
@@ -52,9 +52,26 @@ const actions: ActionTree<ChatState, RootState> = {
         recipientHash: recipientHash,
         readIndex: 0,
         sendMessageList: [],
+        data:{},
+        useEncrypt: undefined,
       };
       Vue.set(state.async.recipientMap, recipientText, recipient);
-      await dispatch('getMessage', [recipientText]);
+      dispatch('getData', recipientText);
+      dispatch('getMessage', [recipientText]);
+    }
+  },
+
+  async getData({ state, rootState, dispatch }, recipientText: string) {
+    if (utils.ethers.isAddress(recipientText)) {
+      const publicKey_MessageId = await rootState.app.sync.ether.blockchat.dataMap(
+        recipientText,
+        rootState.app.sync.ether.blockchat.dataHash('publicKey')
+      );
+      Vue.set(state.async.recipientMap[recipientText].data, 'publicKey', publicKey_MessageId);
+      if (publicKey_MessageId > 0) {
+        Vue.set(state.async.recipientMap[recipientText], 'useEncrypt', false);
+        dispatch('setMessage', [publicKey_MessageId]);
+      }
     }
   },
 
@@ -113,6 +130,9 @@ const actions: ActionTree<ChatState, RootState> = {
 
   async sendMessage({ state, rootState }, content) {
     const recipientText = rootState.app.storage.activeRecipientText;
+    if(state.async.recipientMap[recipientText].useEncrypt){
+      content = 'e:'+ rootState.app.sync.ether.P2P.encrypt(content, state.async.messageCreatedEventMap[state.async.recipientMap[recipientText].data.publicKey].content);
+    }
     const sendMessage: SendMessage = {
       sender: rootState.app.sync.userAddress,
       messageId: 0,
@@ -178,6 +198,9 @@ const actions: ActionTree<ChatState, RootState> = {
   },
 
   async setActiveRecipient({ state, rootState, dispatch }, recipientText: string) {
+    if (utils.ethers.isAddress(recipientText)) {
+      recipientText = utils.ethers.getAddress(recipientText);
+    }
     if (Object.keys(state.async.recipientMap).indexOf(recipientText) == -1) {
       if (rootState.app.storage.recipientTextList.indexOf(recipientText) == -1) {
         rootState.app.storage.recipientTextList.push(recipientText);

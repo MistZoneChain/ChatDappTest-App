@@ -5,7 +5,7 @@
         <span class="message-header-text">
           {{ get_message_header_text() }}
         </span>
-        <myIcon v-if="lockData.show" :type="lockData.type" :class="lockData.class" @click="changeChatRecipientEncrypt()" />
+        <myIcon v-if="get_lock().show" :type="get_lock().type" :class="get_lock().class" @click="clickChatEncrypt()" />
       </div>
     </div>
     <transition name="loading">
@@ -52,6 +52,7 @@
               <a-button v-if="get_content(message).type == 'call'" @click="call(get_content(message).transaction)">{{
                 get_content(message).text
               }}</a-button>
+              <div v-if="get_content(message).type == 'encrypt'" @click="decryptContent(message)">{{ get_content(message).text }}</div>
             </div>
           </div>
         </template>
@@ -115,25 +116,38 @@ export default class MyMessage extends Vue {
   messageList: Array<BlockChatUpgrade2Model.MessageCreatedEvent | SendMessage> = [];
 
   showMessageList: Array<any> = [];
-  lockData: any = {
-    show: false,
-    type: 'unlock',
-    class: '',
-  };
+  reloadText: { [messageId: number]: string } = {};
 
-  async beforeUpdate() {
-    log('beforeUpdate');
-    await this.getType();
-  }
-
-  async getType() {
-    const type = await this.appSync.ether.utils.getType(this.appStorage.activeRecipientText);
-    log(this.appStorage.activeRecipientText, type);
-    if (type == 'wallet') {
-      this.lockData.show = true;
-    } else {
-      this.lockData.show = false;
+  get_lock() {
+    let lockData = {
+      show: false,
+      type: '',
+      class: '',
+    };
+    if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
+      if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == undefined) {
+        if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
+          lockData = {
+            show: true,
+            type: 'unlock',
+            class: 'message-header-icon-white-blue',
+          };
+        }
+      } else if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == false) {
+        lockData = {
+          show: true,
+          type: 'unlock',
+          class: 'message-header-icon-blue',
+        };
+      } else if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == true) {
+        lockData = {
+          show: true,
+          type: 'lock',
+          class: 'message-header-icon-red',
+        };
+      }
     }
+    return lockData;
   }
 
   get_content(message: BlockChatUpgrade2Model.MessageCreatedEvent) {
@@ -193,6 +207,18 @@ export default class MyMessage extends Vue {
             returnTypeList,
           },
         };
+      } else if (message.content.substring(0, 2) == 'e:') {
+        if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
+          return {
+            type: 'encrypt',
+            text: this.reloadText[message.messageId] ? this.reloadText[message.messageId] : this.$t('message.click_to_decrypt_message'),
+          };
+        } else {
+          return {
+            type: 'text',
+            text: this.$t('message.encrypt_message'),
+          };
+        }
       } else {
         return {
           type: 'text',
@@ -301,6 +327,28 @@ export default class MyMessage extends Vue {
       }, 400);
     }
     this.setMessageList();
+  }
+
+  async decryptContent(message: BlockChatUpgrade2Model.MessageCreatedEvent) {
+    const content = await this.appSync.ether.P2P.decrypt(message.content.substring(2), this.appSync.userAddress);
+    this.$set(this.reloadText, message.messageId, content);
+  }
+
+  async clickChatEncrypt() {
+    if (
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == undefined &&
+      this.appStorage.activeRecipientText == this.appSync.userAddress
+    ) {
+      const publicKey = await this.appSync.ether.metamask.getEncryptionPublicKeyByAddress(this.appSync.userAddress);
+      await this.appSync.ether.blockchat.uploadData(this.appSync.ether.blockchat.dataHash('publicKey'), publicKey);
+      this.$store.dispatch('chat/getData', this.appStorage.activeRecipientText);
+    } else if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt != undefined) {
+      this.$set(
+        this.chatAsync.recipientMap[this.appStorage.activeRecipientText],
+        'useEncrypt',
+        !this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt
+      );
+    }
   }
 
   async sendTransaction(transaction: Transaction) {

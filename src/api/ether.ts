@@ -5,7 +5,6 @@ import { COMMON, log } from '@/const';
 import { Web3Provider, JsonRpcProvider } from '@ethersproject/providers';
 import * as ethUtil from 'ethereumjs-util';
 import * as sigUtil from '@metamask/eth-sig-util';
-import * as naclUtil from 'tweetnacl-util';
 
 export class Ether {
   private _ethereum: any;
@@ -15,7 +14,7 @@ export class Ether {
   public provider: Web3Provider | JsonRpcProvider | undefined;
   public blockchat = new EtherBlockChatUpgradeable2Client();
 
-  constructor() {}
+  constructor() { }
 
   async load() {
     let provider: any = await detectEthereumProvider();
@@ -91,9 +90,9 @@ export class Ether {
   P2P = {
     decrypt: async (secretBase64: string, address: string) => {
       const secretHex = Buffer.from(secretBase64, 'base64').toString('hex');
-      const ephemPublicKeyBase64 = naclUtil.encodeBase64(Buffer.from(secretHex.substring(0, 64), 'hex'));
-      const nonceBase64 = naclUtil.encodeBase64(Buffer.from(secretHex.substring(64, 112), 'hex'));
-      const ciphertextBase64 = naclUtil.encodeBase64(Buffer.from(secretHex.substring(112), 'hex'));
+      const ephemPublicKeyBase64 = Buffer.from(secretHex.substring(0, 64), 'hex').toString('base64');
+      const nonceBase64 = Buffer.from(secretHex.substring(64, 112), 'hex').toString('base64');
+      const ciphertextBase64 = Buffer.from(secretHex.substring(112), 'hex').toString('base64');
       const encryptData = JSON.stringify({
         version: 'x25519-xsalsa20-poly1305',
         ephemPublicKey: ephemPublicKeyBase64,
@@ -110,12 +109,12 @@ export class Ether {
     },
     encrypt: (content: string, encryptionPublicKey: string) => {
       const encryptData = sigUtil.encrypt({ publicKey: encryptionPublicKey, data: content, version: 'x25519-xsalsa20-poly1305' });
-      const ephemPublicKeyHex = Buffer.from(naclUtil.decodeBase64(encryptData.ephemPublicKey)).toString('hex');
-      const nonceHex = Buffer.from(naclUtil.decodeBase64(encryptData.nonce)).toString('hex');
-      const ciphertextHex = Buffer.from(naclUtil.decodeBase64(encryptData.ciphertext)).toString('hex');
+      const ephemPublicKeyHex = Buffer.from(encryptData.ephemPublicKey, 'base64').toString('hex');
+      const nonceHex = Buffer.from(encryptData.nonce, 'base64').toString('hex');
+      const ciphertextHex = Buffer.from(encryptData.ciphertext, 'base64').toString('hex');
       const secretHex = ephemPublicKeyHex + nonceHex + ciphertextHex;
       const secretBase64 = Buffer.from(secretHex, 'hex').toString('base64');
-      console.log(secretBase64.length);
+      console.log(secretBase64);
       return secretBase64;
     },
   };
@@ -128,9 +127,9 @@ export class Ether {
       const address = sigUtil.recoverPersonalSignature({ data: secretHex, signature: signHex });
       const wallet = new ethers.Wallet(privateKey);
       const isSign = ethers.utils.getAddress(address) == ethers.utils.getAddress(wallet.address);
-      const ephemPublicKeyBase64 = naclUtil.encodeBase64(Buffer.from(secretHex.substring(0, 64), 'hex'));
-      const nonceBase64 = naclUtil.encodeBase64(Buffer.from(secretHex.substring(64, 112), 'hex'));
-      const ciphertextBase64 = naclUtil.encodeBase64(Buffer.from(secretHex.substring(112), 'hex'));
+      const ephemPublicKeyBase64 = Buffer.from(secretHex.substring(0, 64), 'hex').toString('base64');
+      const nonceBase64 = Buffer.from(secretHex.substring(64, 112), 'hex').toString('base64');
+      const ciphertextBase64 = Buffer.from(secretHex.substring(112), 'hex').toString('base64');
       const encryptedData = {
         version: 'x25519-xsalsa20-poly1305',
         ephemPublicKey: ephemPublicKeyBase64,
@@ -144,9 +143,9 @@ export class Ether {
     encrypt: (content: string, privateKey: string) => {
       const encryptionPublicKey = sigUtil.getEncryptionPublicKey(privateKey.substring(2));
       const encryptData = sigUtil.encrypt({ publicKey: encryptionPublicKey, data: content, version: 'x25519-xsalsa20-poly1305' });
-      const ephemPublicKeyHex = Buffer.from(naclUtil.decodeBase64(encryptData.ephemPublicKey)).toString('hex');
-      const nonceHex = Buffer.from(naclUtil.decodeBase64(encryptData.nonce)).toString('hex');
-      const ciphertextHex = Buffer.from(naclUtil.decodeBase64(encryptData.ciphertext)).toString('hex');
+      const ephemPublicKeyHex = Buffer.from(encryptData.ephemPublicKey, 'base64').toString('hex');
+      const nonceHex = Buffer.from(encryptData.nonce, 'base64').toString('hex');
+      const ciphertextHex = Buffer.from(encryptData.ciphertext, 'base64').toString('hex');
       const secretHex = ephemPublicKeyHex + nonceHex + ciphertextHex;
       const sign = sigUtil.personalSign({ data: secretHex, privateKey: Buffer.from(privateKey.substring(2), 'hex') });
       const signHex = sign.substring(2);
