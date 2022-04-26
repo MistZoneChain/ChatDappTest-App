@@ -13,7 +13,11 @@
         <a-select-option v-if="searchData.recipientText" :value="searchData.recipientText">
           <div @click="selectChat(searchData.recipientText)">
             <div class="avatar">
-              <my-avatar :avatar="appSync.avatarMap[searchData.recipientHash]" :showButton="false" :showName="searchData.recipientText"></my-avatar>
+              <my-avatar
+                :avatar="appSync.avatarMap[searchData.recipientHash]"
+                :showButton="false"
+                :showName="searchData.recipientText"
+              ></my-avatar>
               <span class="avatar-name">{{ `${searchData.recipientText} 消息：${searchData.recipientMessageIdLength}` }}</span>
             </div>
           </div>
@@ -27,7 +31,7 @@
 import { Component, Vue } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
 import MyAvatar from '@/components/Avatar.vue';
-import { log } from '@/const';
+import { log, utils } from '@/const';
 import { AppStorage, AppSync, AppAsync, ChatSync } from '@/store';
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -46,7 +50,12 @@ export default class MySearch extends Vue {
   searchData: { recipientText?: string; recipientHash?: string; recipientMessageIdLength?: number } = {};
 
   async handleSearch(recipientText: string) {
-    const recipientHash = this.appSync.ether.blockchat.recipientHash(recipientText).toString();
+    let recipientHash;
+    if (utils.ethers.isAddress(recipientText)) {
+      recipientHash = recipientText.toLowerCase();
+    } else {
+      recipientHash = this.appSync.ether.blockchat.recipientHash(recipientText).toString();
+    }
     await this.$store.dispatch('app/setAvatar', recipientHash);
     const recipientMessageIdLength = await this.appSync.ether.blockchat.getRecipientMessageListLength(recipientHash);
     this.searchData = {

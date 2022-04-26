@@ -40,16 +40,16 @@ const actions: ActionTree<ChatState, RootState> = {
       Vue.set(state.async.recipientMap, recipientText, {});
       let recipientHash;
       if(utils.ethers.isAddress(recipientText)){
-        recipientHash = recipientText;
+        recipientHash = recipientText.toLowerCase();
       }else{
-        recipientHash = rootState.app.sync.ether.blockchat.recipientHash(recipientText);
+        recipientHash = rootState.app.sync.ether.blockchat.recipientHash(recipientText).toString();
       }
-      await dispatch('app/setAvatar', recipientHash.toString(), { root: true });
+      await dispatch('app/setAvatar', recipientHash, { root: true });
       const messageIdLength = await rootState.app.sync.ether.blockchat.getRecipientMessageListLength(recipientHash);
       const recipient: Recipient = {
         messageIdLength: messageIdLength,
         messageIdList: [],
-        recipientHash: recipientHash.toString(),
+        recipientHash: recipientHash,
         readIndex: 0,
         sendMessageList: [],
       };
