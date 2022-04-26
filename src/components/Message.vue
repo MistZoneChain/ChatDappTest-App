@@ -27,14 +27,14 @@
               :name="get_name(message)"
               :time="utils.format.date(message.createDate)"
               :showName="utils.format.address(message.sender)"
-              @goTo="utils.go.address(appSync.ether.getChainId(), message.sender)"
+              @goTo="utils.go.address(appSync.ether.chainId, message.sender)"
             ></my-avatar>
 
             <a-popover style="display: inline-block" v-if="'status' in message">
               <div slot="content" class="avatar-card">
                 <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
                 <div>{{ get_avatar_card(message).text }}</div>
-                <a-button @click="utils.go.tx(appSync.ether.getChainId(), message.hash)" type="primary" :disabled="!message.hash">{{
+                <a-button @click="utils.go.tx(appSync.ether.chainId, message.hash)" type="primary" :disabled="!message.hash">{{
                   $t('message.view_on_the_blockchain_browser')
                 }}</a-button>
               </div>
