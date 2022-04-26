@@ -227,7 +227,7 @@ export default class MyMessage extends Vue {
   get_message_header_text() {
     try {
       return `${this.appStorage.activeRecipientText} 消息：${
-        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength
+        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength != undefined
           ? this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength
           : ''
       }`;
