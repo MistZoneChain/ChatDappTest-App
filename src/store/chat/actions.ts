@@ -39,9 +39,9 @@ const actions: ActionTree<ChatState, RootState> = {
     if (!state.async.recipientMap[recipientText]) {
       Vue.set(state.async.recipientMap, recipientText, {});
       let recipientHash;
-      if(utils.ethers.isAddress(recipientText)){
+      if (utils.ethers.isAddress(recipientText)) {
         recipientHash = recipientText.toLowerCase();
-      }else{
+      } else {
         recipientHash = rootState.app.sync.ether.blockchat.recipientHash(recipientText).toString();
       }
       await dispatch('app/setAvatar', recipientHash, { root: true });
@@ -125,7 +125,7 @@ const actions: ActionTree<ChatState, RootState> = {
     state.async.recipientMap[recipientText].sendMessageList.push(sendMessage);
     try {
       const message = await rootState.app.sync.ether.blockchat.createMessage(
-        sendMessage.recipientList,
+        sendMessage.recipientList[0],
         sendMessage.content,
         {},
         (transaction: ContractTransaction | ContractReceipt) => {
