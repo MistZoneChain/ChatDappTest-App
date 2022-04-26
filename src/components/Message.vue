@@ -117,10 +117,9 @@ export default class MyMessage extends Vue {
   showMessageList: Array<any> = [];
   lockData: any = {
     show: false,
-    type: 'lock',
+    type: 'unlock',
     class: '',
   };
-  //contentMap: { [messageId: string]: any } = {};
 
   async beforeUpdate() {
     log('beforeUpdate');
@@ -129,8 +128,11 @@ export default class MyMessage extends Vue {
 
   async getType() {
     const type = await this.appSync.ether.utils.getType(this.appStorage.activeRecipientText);
+    log(this.appStorage.activeRecipientText, type);
     if (type == 'wallet') {
-      this.$set(this.lockData, 'show', true);
+      this.lockData.show = true;
+    }else{
+      this.lockData.show = false;
     }
   }
 
