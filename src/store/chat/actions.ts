@@ -169,14 +169,14 @@ const actions: ActionTree<ChatState, RootState> = {
     }
   },
 
-  async listenMessage({ state, rootState }) {
+  async listenMessage({ state, rootState, dispatch }) {
     rootState.app.sync.ether.blockchat.listenMessage(async (event: BlockChatUpgrade2Model.MessageCreatedEvent) => {
       try {
         const recipientTextList = Object.keys(state.async.recipientMap);
         for (let i = 0; i < recipientTextList.length; i++) {
-          if (state.async.recipientMap[recipientTextList[i]].recipientHash == event.recipientList.toString()) {
+          if (event.recipientList.indexOf(state.async.recipientMap[recipientTextList[i]].recipientHash) != -1) {
             state.async.recipientMap[recipientTextList[i]].messageIdList.push(event.messageId);
-            break;
+            dispatch('setMessage', [event.messageId]);
           }
         }
       } catch (err) {
