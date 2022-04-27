@@ -53,6 +53,14 @@
                 get_content(message).text
               }}</a-button>
               <div v-if="get_content(message).type == 'encrypt'" @click="decryptContent(message)">{{ get_content(message).text }}</div>
+              <img
+                v-if="get_content(message).type == 'image'"
+                :src="get_content(message).src"
+                :alt="get_content(message).alt"
+                :height="300"
+              />
+              <video v-if="get_content(message).type == 'video'" controls :height="300" :src="get_content(message).src"/>
+              <audio v-if="get_content(message).type == 'audio'" controls :src="get_content(message).src"/>
             </div>
           </div>
         </template>
@@ -152,14 +160,15 @@ export default class MyMessage extends Vue {
 
   get_content(message: BlockChatUpgrade2Model.MessageCreatedEvent) {
     try {
-      if (utils.is.url(message.content)) {
+      if (message.content.substring(0, 3) == 'u::') {
+        const [_, href, text] = message.content.split('::');
         return {
           type: 'url',
-          href: message.content,
-          text: message.content,
+          href,
+          text,
         };
-      } else if (message.content.substring(0, 2) == 't:') {
-        const [_, contractAddress, functionName, value, types, args, text] = message.content.split(':');
+      } else if (message.content.substring(0, 3) == 't::') {
+        const [_, contractAddress, functionName, value, types, args, text] = message.content.split('::');
         let typeList = [types];
         if (types.indexOf(',') != -1) {
           typeList = types.split(',');
@@ -180,8 +189,8 @@ export default class MyMessage extends Vue {
             callcode,
           },
         };
-      } else if (message.content.substring(0, 2) == 'c:') {
-        const [_, contractAddress, functionName, types, args, returnTypes, text] = message.content.split(':');
+      } else if (message.content.substring(0, 3) == 'c::') {
+        const [_, contractAddress, functionName, types, args, returnTypes, text] = message.content.split('::');
         log(contractAddress, functionName, types, args, returnTypes, text);
         let typeList = [types];
         if (types.indexOf(',') != -1) {
@@ -207,7 +216,7 @@ export default class MyMessage extends Vue {
             returnTypeList,
           },
         };
-      } else if (message.content.substring(0, 2) == 'e:') {
+      } else if (message.content.substring(0, 3) == 'e::') {
         if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
           return {
             type: 'encrypt',
@@ -219,6 +228,25 @@ export default class MyMessage extends Vue {
             text: this.$t('message.encrypt_message'),
           };
         }
+      } else if (message.content.substring(0, 3) == 'i::') {
+        const [_, src, alt] = message.content.split('::');
+        return {
+          type: 'image',
+          src,
+          alt,
+        };
+      } else if (message.content.substring(0, 3) == 'v::') {
+        const [_, src] = message.content.split('::');
+        return {
+          type: 'video',
+          src,
+        };
+      } else if (message.content.substring(0, 3) == 'a::') {
+        const [_, src] = message.content.split('::');
+        return {
+          type: 'audio',
+          src,
+        };
       } else {
         return {
           type: 'text',
@@ -330,7 +358,7 @@ export default class MyMessage extends Vue {
   }
 
   async decryptContent(message: BlockChatUpgrade2Model.MessageCreatedEvent) {
-    const content = await this.appSync.ether.P2P.decrypt(message.content.substring(2), this.appSync.userAddress);
+    const content = await this.appSync.ether.P2P.decrypt(message.content.replace('e::', ''), this.appSync.userAddress);
     this.$set(this.reloadText, message.messageId, content);
   }
 

@@ -132,7 +132,7 @@ const actions: ActionTree<ChatState, RootState> = {
     const recipientText = rootState.app.storage.activeRecipientText;
     if (state.async.recipientMap[recipientText].useEncrypt) {
       content =
-        'e:' +
+        'e::' +
         rootState.app.sync.ether.P2P.encrypt(
           content,
           state.async.messageCreatedEventMap[state.async.recipientMap[recipientText].data.publicKey].content
