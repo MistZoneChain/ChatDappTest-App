@@ -333,7 +333,12 @@ export default class MyMessage extends Vue {
   }
 
   @Watch('chatAsync.messageCreatedEventListMap', { deep: true })
-  changemessageCreatedEventListMap() {
+  changeMessageCreatedEventListMap() {
+    this.setMessageList();
+  }
+
+  @Watch('chatAsync.recipientMap', { deep: true })
+  changeRecipientMap() {
     this.setMessageList();
   }
 
@@ -407,8 +412,8 @@ export default class MyMessage extends Vue {
 
   setMessageList() {
     if (this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]) {
-      let messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> =
-        this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText];
+      let messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> = [];
+      messageList.push(...this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]);
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList.forEach((sendMessage) => {
         messageList.push(sendMessage);
       });
