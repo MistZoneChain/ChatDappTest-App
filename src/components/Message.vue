@@ -337,11 +337,6 @@ export default class MyMessage extends Vue {
     this.setMessageList();
   }
 
-  @Watch('chatAsync.recipientMap', { deep: true })
-  changeRecipientMap() {
-    this.setMessageList();
-  }
-
   @Watch('appStorage.activeRecipientText')
   changeActiveRecipient() {
     this.status = MessageStatus.loading;
@@ -363,13 +358,13 @@ export default class MyMessage extends Vue {
 
   async clickChatEncrypt() {
     if (
-      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == undefined &&
+      !this.chatAsync.dataUploadedEventMap[this.appStorage.activeRecipientText + 'publicKey'] &&
       this.appStorage.activeRecipientText == this.appSync.userAddress
     ) {
       const publicKey = await this.appSync.ether.metamask.getEncryptionPublicKeyByAddress(this.appSync.userAddress);
       await this.appSync.ether.blockchat.uploadData(this.appSync.ether.blockchat.nameHash('publicKey'), publicKey);
       this.$store.dispatch('chat/setDataUploadedEvent', this.appStorage.activeRecipientText);
-    } else if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt != undefined) {
+    } else if (this.chatAsync.dataUploadedEventMap[this.appStorage.activeRecipientText + 'publicKey']) {
       this.$set(
         this.chatAsync.recipientMap[this.appStorage.activeRecipientText],
         'useEncrypt',
@@ -411,7 +406,7 @@ export default class MyMessage extends Vue {
   }
 
   setMessageList() {
-    if (utils.have.value(this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText])) {
+    if (this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]) {
       let messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> =
         this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText];
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList.forEach((sendMessage) => {
@@ -465,12 +460,8 @@ export default class MyMessage extends Vue {
   }
 
   getMessage() {
-    this.$store.dispatch('chat/getMessage', [
-      undefined,
-      () => {
-        this.status = MessageStatus.geting;
-      },
-    ]);
+    this.status = MessageStatus.geting;
+    this.$store.dispatch('chat/getMessage');
   }
 
   scrollToBottom() {

@@ -71,7 +71,7 @@ const actions: ActionTree<ChatState, RootState> = {
       dispatch('setDataUploadedEvent', recipientText);
       await dispatch('setMessageBlock', recipientText);
       dispatch('setMessageCreatedEventList', recipientText);
-      
+
     }
   },
 
@@ -79,7 +79,7 @@ const actions: ActionTree<ChatState, RootState> = {
     state.sync.dataList.forEach(async (data) => {
       try {
         const recipientData = state.async.recipientMap[recipientText].recipientHash + data;
-        if (!state.async.dataUploadedEventMap[recipientData]) {
+        if (!state.async.dataUploadedEventMap[recipientData] || state.async.dataUploadedEventMap[recipientData] == 0) {
           const dataHash = rootState.app.sync.ether.blockchat.dataHash(state.async.recipientMap[recipientText].recipientHash, data);
           const dataBlock = await rootState.app.sync.ether.blockchat.dataBlockMap(dataHash);
           Vue.set(state.async.dataUploadedEventMap, recipientData, dataBlock);
@@ -125,14 +125,12 @@ const actions: ActionTree<ChatState, RootState> = {
       state.async.recipientMap[recipientText].messageBlockList.forEach(async (messageBlock) => {
         try {
           if (state.async.blockSkip) {
-            log('setMessageCreatedEventList')
             const messageCreatedEventList = await rootState.app.sync.ether.blockchat.getMessageCreatedEventList(
               undefined,
               `${state.async.recipientMap[recipientText].recipientHash}000000000000000000000000`,
               messageBlock,
               messageBlock + state.async.blockSkip
             );
-            log('setMessageCreatedEventList')
             state.async.messageCreatedEventListMap[recipientText].push(...messageCreatedEventList);
             messageCreatedEventList.forEach(async (messageCreatedEvent) => {
               try {
@@ -150,7 +148,6 @@ const actions: ActionTree<ChatState, RootState> = {
         }
       });
     }
-    log(state.async.messageCreatedEventListMap[recipientText])
   },
 
   async getMessage({ rootState, dispatch }) {
