@@ -7,7 +7,7 @@
 import { ActionTree } from 'vuex';
 import Vue from 'vue';
 import { RootState, AppState } from '../index';
-import { utils } from '@/const';
+import { utils, log } from '@/const';
 import { Ether, API } from '@/api';
 
 const actions: ActionTree<AppState, RootState> = {
@@ -15,7 +15,7 @@ const actions: ActionTree<AppState, RootState> = {
     try {
       await dispatch('setSync');
       await dispatch('watchStorage');
-      console.log('app start success!');
+      log('app start success!');
     } catch (err) {
       throw err;
     }

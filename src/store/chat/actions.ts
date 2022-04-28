@@ -77,10 +77,8 @@ const actions: ActionTree<ChatState, RootState> = {
     state.sync.dataList.forEach(async (data) => {
       const recipientData = state.async.recipientMap[recipientText].recipientHash + data;
       if (!state.async.dataUploadedEventMap[recipientData]) {
-        const dataHash = rootState.app.sync.ether.blockchat.dataHash(state.async.recipientMap[recipientText].recipientHash, data)
-        const dataBlock = await rootState.app.sync.ether.blockchat.dataBlockMap(
-          dataHash
-        );
+        const dataHash = rootState.app.sync.ether.blockchat.dataHash(state.async.recipientMap[recipientText].recipientHash, data);
+        const dataBlock = await rootState.app.sync.ether.blockchat.dataBlockMap(dataHash);
         Vue.set(state.async.dataUploadedEventMap, recipientData, dataBlock);
         if (dataBlock > 0) {
           const dataUploadedEvent = await rootState.app.sync.ether.blockchat.getDataUploadedEvent(dataHash, dataBlock, dataBlock);
@@ -143,12 +141,7 @@ const actions: ActionTree<ChatState, RootState> = {
     const recipientText = rootState.app.storage.activeRecipientText;
     const publicKey = state.async.dataUploadedEventMap[state.async.recipientMap[recipientText].recipientHash + 'publicKey'];
     if (state.async.recipientMap[recipientText].useEncrypt && typeof publicKey == 'string') {
-      content =
-        'e::' +
-        rootState.app.sync.ether.P2P.encrypt(
-          content,
-          publicKey
-        );
+      content = 'e::' + rootState.app.sync.ether.P2P.encrypt(content, publicKey);
     }
     const sendMessage: SendMessage = {
       sender: rootState.app.sync.userAddress,
