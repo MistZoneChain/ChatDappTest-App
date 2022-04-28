@@ -30,7 +30,7 @@ export function log(...args: any) {
   } else {
     console.log(new Date().toLocaleString(), new Date().getTime() - lastTime, ...args);
   }
-  lastTime = new Date().getTime()
+  lastTime = new Date().getTime();
 }
 
 export async function retry(func: Function, time: number, args?: Array<any>, callback?: Function): Promise<any> {

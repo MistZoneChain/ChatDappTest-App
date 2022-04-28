@@ -71,7 +71,6 @@ const actions: ActionTree<ChatState, RootState> = {
       dispatch('setDataUploadedEvent', recipientText);
       await dispatch('setMessageBlock', recipientText);
       dispatch('setMessageCreatedEventList', recipientText);
-
     }
   },
 
@@ -89,7 +88,7 @@ const actions: ActionTree<ChatState, RootState> = {
           }
         }
       } catch (err) {
-        log(err)
+        log(err);
       }
     });
   },
@@ -137,14 +136,14 @@ const actions: ActionTree<ChatState, RootState> = {
                 await dispatch('app/setAvatar', messageCreatedEvent.sender, { root: true });
                 await dispatch('app/setUSD_Value', messageCreatedEvent.sender, { root: true });
               } catch (err) {
-                log(err)
+                log(err);
               }
             });
           } else {
-            throw new Error('blockSkip is undefined')
+            throw new Error('blockSkip is undefined');
           }
         } catch (err) {
-          log(err)
+          log(err);
         }
       });
     }
@@ -158,10 +157,10 @@ const actions: ActionTree<ChatState, RootState> = {
     const recipientText = rootState.app.storage.activeRecipientText;
     const publicKey = state.async.dataUploadedEventMap[state.async.recipientMap[recipientText].recipientHash + 'publicKey'];
     if (state.async.recipientMap[recipientText].useEncrypt) {
-      if(typeof publicKey != 'number') {
+      if (typeof publicKey != 'number') {
         content = 'e::' + rootState.app.sync.ether.P2P.encrypt(content, publicKey.content);
-      }else{
-        throw new Error('publicKey is undefined')
+      } else {
+        throw new Error('publicKey is undefined');
       }
     }
     const sendMessage: SendMessage = {
@@ -198,7 +197,10 @@ const actions: ActionTree<ChatState, RootState> = {
       try {
         const recipientTextList = rootState.app.storage.recipientTextList;
         for (let i = 0; i < recipientTextList.length; i++) {
-          if (messageCreatedEvent.recipientHash == state.async.recipientMap[recipientTextList[i]].recipientHash) {
+          if (
+            messageCreatedEvent.recipientHash == state.async.recipientMap[recipientTextList[i]].recipientHash &&
+            rootState.app.sync.userAddress != messageCreatedEvent.sender
+          ) {
             state.async.messageCreatedEventListMap[recipientTextList[i]].push(messageCreatedEvent);
           }
         }

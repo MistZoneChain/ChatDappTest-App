@@ -413,10 +413,10 @@ export default class MyMessage extends Vue {
   setMessageList() {
     if (this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]) {
       let messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> = [];
-      messageList.push(...this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]);
-      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList.forEach((sendMessage) => {
-        messageList.push(sendMessage);
-      });
+      messageList.push(
+        ...this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList,
+        ...this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]
+      );
       if (this.messageList.length != messageList.length) {
         messageList = messageList.sort((message_a, message_b) => {
           return message_a.createDate - message_b.createDate;
