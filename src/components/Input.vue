@@ -64,10 +64,7 @@ export default class MyInput extends Vue {
   async sendMessage() {
     try {
       if (!this.messageInput.trim()) {
-        throw this.$t('input.cannot_send_empty_messages') as string;
-      }
-      if (this.messageInput.length > 220) {
-        throw this.$t('input.message_is_too_long') as string;
+        throw new Error(this.$t('input.cannot_send_empty_messages') as string);
       }
       const content = this.messageInput;
       this.messageInput = '';
