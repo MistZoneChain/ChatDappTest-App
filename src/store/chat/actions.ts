@@ -58,7 +58,7 @@ const actions: ActionTree<ChatState, RootState> = {
       } else {
         recipientHash = rootState.app.sync.ether.blockchat.recipientHash(recipientText);
       }
-      dispatch('app/setAvatar', recipientHash, { root: true });
+      await dispatch('app/setAvatar', recipientHash, { root: true });
       const messageBlockListLength = await rootState.app.sync.ether.blockchat.getRecipientMessageBlockListLength(recipientHash);
       const recipient: Recipient = {
         messageBlockListLength: messageBlockListLength,
@@ -69,26 +69,32 @@ const actions: ActionTree<ChatState, RootState> = {
       };
       Vue.set(state.async.recipientMap, recipientText, recipient);
       dispatch('setDataUploadedEvent', recipientText);
-      dispatch('setMessageBlock', [recipientText]);
+      await dispatch('setMessageBlock', recipientText);
+      dispatch('setMessageCreatedEventList', recipientText);
+      
     }
   },
 
   async setDataUploadedEvent({ state, rootState }, recipientText: string) {
     state.sync.dataList.forEach(async (data) => {
-      const recipientData = state.async.recipientMap[recipientText].recipientHash + data;
-      if (!state.async.dataUploadedEventMap[recipientData]) {
-        const dataHash = rootState.app.sync.ether.blockchat.dataHash(state.async.recipientMap[recipientText].recipientHash, data);
-        const dataBlock = await rootState.app.sync.ether.blockchat.dataBlockMap(dataHash);
-        Vue.set(state.async.dataUploadedEventMap, recipientData, dataBlock);
-        if (dataBlock > 0) {
-          const dataUploadedEvent = await rootState.app.sync.ether.blockchat.getDataUploadedEvent(dataHash, dataBlock, dataBlock);
-          Vue.set(state.async.dataUploadedEventMap, recipientData, dataUploadedEvent);
+      try {
+        const recipientData = state.async.recipientMap[recipientText].recipientHash + data;
+        if (!state.async.dataUploadedEventMap[recipientData]) {
+          const dataHash = rootState.app.sync.ether.blockchat.dataHash(state.async.recipientMap[recipientText].recipientHash, data);
+          const dataBlock = await rootState.app.sync.ether.blockchat.dataBlockMap(dataHash);
+          Vue.set(state.async.dataUploadedEventMap, recipientData, dataBlock);
+          if (dataBlock > 0) {
+            const dataUploadedEvent = await rootState.app.sync.ether.blockchat.getDataUploadedEvent(dataHash, dataBlock, dataBlock);
+            Vue.set(state.async.dataUploadedEventMap, recipientData, dataUploadedEvent);
+          }
         }
+      } catch (err) {
+        log(err)
       }
     });
   },
 
-  async setMessageBlock({ state, rootState, dispatch }, recipientText: string) {
+  async setMessageBlock({ state, rootState }, recipientText: string) {
     if (state.async.recipientMap[recipientText].messageBlockListLength > state.async.recipientMap[recipientText].messageBlockList.length) {
       const recipient = state.async.recipientMap[recipientText];
       let start = recipient.messageBlockListLength - recipient.messageBlockList.length;
@@ -106,7 +112,6 @@ const actions: ActionTree<ChatState, RootState> = {
           length
         );
         recipient.messageBlockList.push(...recipientMessageBlockList);
-        dispatch('setMessageCreatedEventList', recipientText);
       }
     }
   },
@@ -115,22 +120,37 @@ const actions: ActionTree<ChatState, RootState> = {
     if (!state.async.blockSkip) {
       state.async.blockSkip = await rootState.app.sync.ether.blockchat.blockSkip();
     }
-    state.async.recipientMap[recipientText].messageBlockList.forEach(async (messageBlock) => {
-      if (!state.async.messageCreatedEventListMap && state.async.blockSkip) {
-        Vue.set(state.async.messageCreatedEventListMap, recipientText, {});
-        const messageCreatedEventList = await rootState.app.sync.ether.blockchat.getMessageCreatedEventList(
-          undefined,
-          state.async.recipientMap[recipientText].recipientHash,
-          messageBlock,
-          messageBlock + state.async.blockSkip
-        );
-        Vue.set(state.async.messageCreatedEventListMap, recipientText, messageCreatedEventList);
-        messageCreatedEventList.forEach(async (messageCreatedEvent) => {
-          dispatch('app/setAvatar', messageCreatedEvent.sender, { root: true });
-          dispatch('app/setUSD_Value', messageCreatedEvent.sender, { root: true });
-        });
-      }
-    });
+    if (!state.async.messageCreatedEventListMap[recipientText]) {
+      Vue.set(state.async.messageCreatedEventListMap, recipientText, []);
+      state.async.recipientMap[recipientText].messageBlockList.forEach(async (messageBlock) => {
+        try {
+          if (state.async.blockSkip) {
+            log('setMessageCreatedEventList')
+            const messageCreatedEventList = await rootState.app.sync.ether.blockchat.getMessageCreatedEventList(
+              undefined,
+              `${state.async.recipientMap[recipientText].recipientHash}000000000000000000000000`,
+              messageBlock,
+              messageBlock + state.async.blockSkip
+            );
+            log('setMessageCreatedEventList')
+            state.async.messageCreatedEventListMap[recipientText].push(...messageCreatedEventList);
+            messageCreatedEventList.forEach(async (messageCreatedEvent) => {
+              try {
+                await dispatch('app/setAvatar', messageCreatedEvent.sender, { root: true });
+                await dispatch('app/setUSD_Value', messageCreatedEvent.sender, { root: true });
+              } catch (err) {
+                log(err)
+              }
+            });
+          } else {
+            throw new Error('blockSkip is undefined')
+          }
+        } catch (err) {
+          log(err)
+        }
+      });
+    }
+    log(state.async.messageCreatedEventListMap[recipientText])
   },
 
   async getMessage({ rootState, dispatch }) {
@@ -153,7 +173,7 @@ const actions: ActionTree<ChatState, RootState> = {
     const index = state.async.recipientMap[recipientText].sendMessageList.length;
     state.async.recipientMap[recipientText].sendMessageList.push(sendMessage);
     try {
-      const message = await rootState.app.sync.ether.blockchat.createMessage(
+      await rootState.app.sync.ether.blockchat.createMessage(
         sendMessage.recipientHash,
         sendMessage.content,
         {},
@@ -175,7 +195,7 @@ const actions: ActionTree<ChatState, RootState> = {
   async listenMessageCreatedEvent({ state, rootState }) {
     rootState.app.sync.ether.blockchat.listenMessageCreatedEvent(async (messageCreatedEvent: BlockChatUpgradeModel.MessageCreatedEvent) => {
       try {
-        const recipientTextList = Object.keys(state.async.recipientMap);
+        const recipientTextList = rootState.app.storage.recipientTextList;
         for (let i = 0; i < recipientTextList.length; i++) {
           if (messageCreatedEvent.recipientHash == state.async.recipientMap[recipientTextList[i]].recipientHash) {
             state.async.messageCreatedEventListMap[recipientTextList[i]].push(messageCreatedEvent);

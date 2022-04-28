@@ -125,8 +125,6 @@ export default class MyMessage extends Vue {
 
   status: MessageStatus = MessageStatus.loading;
   messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> = [];
-
-  showMessageList: Array<any> = [];
   reloadText: { [messageId: number]: string } = {};
 
   get_lock() {
@@ -136,20 +134,22 @@ export default class MyMessage extends Vue {
       class: '',
     };
     if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
-      if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == undefined) {
-        if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
+      if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == false) {
+        if (!this.chatAsync.dataUploadedEventMap[this.appStorage.activeRecipientText + 'publicKey']) {
+          if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
+            lockData = {
+              show: true,
+              type: 'unlock',
+              class: 'message-header-icon-white-blue',
+            };
+          }
+        } else {
           lockData = {
             show: true,
             type: 'unlock',
-            class: 'message-header-icon-white-blue',
+            class: 'message-header-icon-blue',
           };
         }
-      } else if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == false) {
-        lockData = {
-          show: true,
-          type: 'unlock',
-          class: 'message-header-icon-blue',
-        };
       } else if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == true) {
         lockData = {
           show: true,
@@ -332,8 +332,8 @@ export default class MyMessage extends Vue {
     }
   }
 
-  @Watch('chatAsync.messageCreatedEventMap', { deep: true })
-  changemessageCreatedEventMap() {
+  @Watch('chatAsync.messageCreatedEventListMap', { deep: true })
+  changemessageCreatedEventListMap() {
     this.setMessageList();
   }
 
@@ -431,8 +431,8 @@ export default class MyMessage extends Vue {
 
   checkMessageList() {
     let loadAll =
-      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength >=
-      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length;
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length ==
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength;
     if (this.status == MessageStatus.geting) {
       this.scrollTo();
       if (loadAll) {

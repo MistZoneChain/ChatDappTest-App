@@ -1,8 +1,9 @@
 import Vue from 'vue';
 import { COMMON } from '.';
 import Identicon from 'identicon.js';
-import { BigNumber, utils as ethers } from 'ethers';
-import { Ether } from '@/api';
+import { utils as ethers } from 'ethers';
+
+let lastTime: number;
 
 const have = {
   value(obj: any) {
@@ -24,7 +25,12 @@ export function sleep(time: number) {
 }
 
 export function log(...args: any) {
-  console.log(new Date().toLocaleString(), ...args);
+  if (!lastTime) {
+    console.log(new Date().toLocaleString(), ...args);
+  } else {
+    console.log(new Date().toLocaleString(), new Date().getTime() - lastTime, ...args);
+  }
+  lastTime = new Date().getTime()
 }
 
 export async function retry(func: Function, time: number, args?: Array<any>, callback?: Function): Promise<any> {
