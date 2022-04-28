@@ -1,4 +1,4 @@
-import { BlockChatUpgrade2Model } from 'blockchat-contract-sdk';
+import { BlockChatUpgradeModel } from 'blockchat-contract-sdk';
 
 /*
  * @Author: 33357
@@ -6,7 +6,8 @@ import { BlockChatUpgrade2Model } from 'blockchat-contract-sdk';
  * @LastEditTime: 2021-03-02 21:06:42
  * @LastEditors: 33357
  */
-export { BlockChatUpgrade2Model } from 'blockchat-contract-sdk';
+
+export { BlockChatUpgradeModel } from 'blockchat-contract-sdk';
 
 export enum SendMessageStatus {
   prePending,
@@ -15,39 +16,40 @@ export enum SendMessageStatus {
   error,
 }
 
-export interface SendMessage extends BlockChatUpgrade2Model.MessageCreatedEvent {
+export interface SendMessage extends BlockChatUpgradeModel.MessageCreatedEvent {
   status: SendMessageStatus;
   hash?: string;
 }
 
 export interface Recipient {
-  messageIdLength: number;
-  messageIdList: Array<number>;
+  messageBlockListLength: number;
+  messageBlockList: Array<number>;
   recipientHash: string;
-  readIndex: number;
   sendMessageList: Array<SendMessage>;
-  data: { [name: string]: number };
-  useEncrypt: boolean | undefined;
-}
-
-export interface MessageMap {
-  [messageId: number]: BlockChatUpgrade2Model.Message;
+  useEncrypt: boolean;
 }
 
 export interface MessageCreatedEventMap {
-  [messageId: number]: BlockChatUpgrade2Model.MessageCreatedEvent;
+  [recipientText: string]: Array<BlockChatUpgradeModel.MessageCreatedEvent>;
+}
+
+export interface DataUploadedEventMap {
+  [recipientData: string]: number | BlockChatUpgradeModel.DataUploadedEvent;
 }
 
 export interface RecipientMap {
   [recipientText: string]: Recipient;
 }
 
-export interface ChatSync {}
+export interface ChatSync {
+  dataList: Array<string>
+}
 
 export interface ChatAsync {
+  blockSkip: number | undefined;
   recipientMap: RecipientMap;
-  messageMap: MessageMap;
-  messageCreatedEventMap: MessageCreatedEventMap;
+  dataUploadedEventMap: DataUploadedEventMap;
+  messageCreatedEventListMap: MessageCreatedEventMap;
 }
 
 export interface ChatState {
@@ -56,11 +58,14 @@ export interface ChatState {
 }
 
 const chatState: ChatState = {
-  sync: {},
+  sync: {
+    dataList: ['publicKey'],
+  },
   async: {
+    blockSkip: undefined,
     recipientMap: {},
-    messageMap: {},
-    messageCreatedEventMap: {},
+    dataUploadedEventMap: {},
+    messageCreatedEventListMap: {},
   },
 };
 

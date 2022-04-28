@@ -18,7 +18,7 @@
                 :showButton="false"
                 :showName="searchData.recipientText"
               ></my-avatar>
-              <span class="avatar-name">{{ `${searchData.recipientText} 消息：${searchData.recipientMessageIdLength}` }}</span>
+              <span class="avatar-name">{{ searchData.text }}</span>
             </div>
           </div>
         </a-select-option>
@@ -47,7 +47,7 @@ export default class MySearch extends Vue {
   @appModule.State('async') appAsync: AppAsync;
   @chatModule.State('sync') chatSync: ChatSync;
 
-  searchData: { recipientText?: string; recipientHash?: string; recipientMessageIdLength?: number } = {};
+  searchData: { recipientText?: string; recipientHash?: string; text?: string } = {};
 
   async handleSearch(recipientText: string) {
     let recipientHash;
@@ -57,11 +57,11 @@ export default class MySearch extends Vue {
       recipientHash = this.appSync.ether.blockchat.recipientHash(recipientText).toString();
     }
     await this.$store.dispatch('app/setAvatar', recipientHash);
-    const recipientMessageIdLength = await this.appSync.ether.blockchat.getRecipientMessageListLength(recipientHash);
+    const recipientMessageBlockListLength = await this.appSync.ether.blockchat.getRecipientMessageBlockListLength(recipientHash);
     this.searchData = {
       recipientText,
       recipientHash,
-      recipientMessageIdLength,
+      text: `${recipientText} ${recipientMessageBlockListLength > 0 ? '有消息' : '无消息'}`,
     };
   }
 

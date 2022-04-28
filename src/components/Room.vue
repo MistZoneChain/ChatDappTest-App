@@ -37,7 +37,7 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
 import { AppSync, AppAsync, AppStorage, ChatSync, ChatAsync } from '@/store';
-import { utils, log} from '@/const';
+import { utils, log } from '@/const';
 import MyAvatar from '@/components/Avatar.vue';
 
 const chatModule = namespace('chat');
@@ -59,9 +59,9 @@ export default class MyRoom extends Vue {
 
   get_room_card_new_text(recipientText: string) {
     try {
-      return `[${utils.format.address(
-        this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText].messageIdList)].sender
-      )}]:${this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText].messageIdList)].content}`;
+      return `[${utils.format.address(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).sender)}]:${
+        utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).content
+      }`;
     } catch (error) {
       return '';
     }
@@ -72,27 +72,27 @@ export default class MyRoom extends Vue {
     this.setRecipient();
   }
 
-  @Watch('chatAsync.messageCreatedEventMap', { deep: true })
+  @Watch('chatAsync.messageCreatedEventListMap', { deep: true })
   changeMessageCreatedEventMap() {
     this.setRecipient();
   }
 
   setRecipient() {
-    let recipientTextList = Object.keys(this.chatAsync.recipientMap).filter((recipientText) => {
+    let recipientTextList = this.appStorage.recipientTextList.filter((recipientText) => {
       return utils.have.value(this.chatAsync.recipientMap[recipientText]);
     });
     if (recipientTextList.length >= 2) {
       recipientTextList = recipientTextList.sort((recipientText_a, recipientText_b) => {
         if (
-          utils.have.value(this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)]) &&
-          utils.have.value(this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)])
+          utils.have.value(this.chatAsync.messageCreatedEventListMap[recipientText_a]) &&
+          utils.have.value(this.chatAsync.messageCreatedEventListMap[recipientText_b])
         ) {
           return (
-            this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageIdList)].createDate -
-            this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)].createDate
+            utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText_b]).createDate -
+            utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText_a]).createDate
           );
         } else {
-          if (utils.have.value(this.chatAsync.messageCreatedEventMap[utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageIdList)])) {
+          if (utils.have.value(this.chatAsync.messageCreatedEventListMap[recipientText_a])) {
             return -1;
           }
           return 1;

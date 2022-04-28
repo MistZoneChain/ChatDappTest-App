@@ -13,7 +13,7 @@ export interface AppStorage {
   recipientTextList: Array<string>;
   background: string;
   decimalLimit: number;
-  messageLimit: number;
+  messageBlockLimit: number;
 }
 
 export interface AppSync {
@@ -44,7 +44,7 @@ const appState: AppState = {
     recipientTextList: ['blockchat', 'eth', 'bsc'],
     background: COMMON.BACKGROUND_LIST[0].URL,
     decimalLimit: 5,
-    messageLimit: 10,
+    messageBlockLimit: 10,
   },
   sync: {
     userAddress: COMMON.ZERO_ADDRESS,

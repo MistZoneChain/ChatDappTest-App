@@ -1,4 +1,4 @@
-import { EtherBlockChatUpgradeable2Client } from 'blockchat-contract-sdk';
+import { EtherBlockChatUpgradeableClient } from 'blockchat-contract-sdk';
 import detectEthereumProvider from '@metamask/detect-provider';
 import { ethers, Signer } from 'ethers';
 import { COMMON, log } from '@/const';
@@ -12,7 +12,7 @@ export class Ether {
   public singer: Signer | undefined;
   public chainId: number | undefined;
   public provider: Web3Provider | JsonRpcProvider | undefined;
-  public blockchat = new EtherBlockChatUpgradeable2Client();
+  public blockchat = new EtherBlockChatUpgradeableClient();
 
   constructor() {}
 

@@ -41,26 +41,29 @@
               <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
             </a-popover>
             <div class="message-content-text">
-              <a v-if="get_content(message).type == 'url'" :href="get_content(message).href" target="_blank"
-                >{{ get_content(message).text }}
+              <a v-if="get_content(message, index).type == 'url'" :href="get_content(message, index).href" target="_blank"
+                >{{ get_content(message, index).text }}
               </a>
-              <div v-if="get_content(message).type == 'text'">{{ get_content(message).text }}</div>
-              <a-button v-if="get_content(message).type == 'transaction'" @click="sendTransaction(get_content(message).transaction)">{{
-                get_content(message).text
-              }}</a-button>
-              <!-- <div v-if="get_content(message).type == 'call'">{{ call(get_content(message).transaction) }}</div> -->
-              <a-button v-if="get_content(message).type == 'call'" @click="call(get_content(message).transaction)">{{
-                get_content(message).text
-              }}</a-button>
-              <div v-if="get_content(message).type == 'encrypt'" @click="decryptContent(message)">{{ get_content(message).text }}</div>
+              <div v-if="get_content(message, index).type == 'text'">{{ get_content(message, index).text }}</div>
+              <a-button
+                v-if="get_content(message, index).type == 'transaction'"
+                @click="sendTransaction(get_content(message, index).transaction)"
+                >{{ get_content(message, index).text }}</a-button
+              >
+              <div v-if="get_content(message, index).type == 'call'" @click="call(get_content(message, index).transaction)">
+                {{ get_content(message, index).text }}
+              </div>
+              <div v-if="get_content(message, index).type == 'encrypt'" @click="decryptContent(message, index)">
+                {{ get_content(message, index).text }}
+              </div>
               <img
-                v-if="get_content(message).type == 'image'"
-                :src="get_content(message).src"
-                :alt="get_content(message).alt"
+                v-if="get_content(message, index).type == 'image'"
+                :src="get_content(message, index).src"
+                :alt="get_content(message, index).alt"
                 :height="300"
               />
-              <video v-if="get_content(message).type == 'video'" controls :height="300" :src="get_content(message).src"/>
-              <audio v-if="get_content(message).type == 'audio'" controls :src="get_content(message).src"/>
+              <video v-if="get_content(message, index).type == 'video'" controls :height="300" :src="get_content(message, index).src" />
+              <audio v-if="get_content(message, index).type == 'audio'" controls :src="get_content(message, index).src" />
             </div>
           </div>
         </template>
@@ -75,7 +78,7 @@ import { Component, Vue, Watch } from 'vue-property-decorator';
 import MyAvatar from '@/components/Avatar.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
-import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, BlockChatUpgrade2Model, SendMessageStatus } from '@/store';
+import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, BlockChatUpgradeModel, SendMessageStatus } from '@/store';
 import { utils, log, BigNumber } from '@/const';
 
 const chatModule = namespace('chat');
@@ -121,7 +124,7 @@ export default class MyMessage extends Vue {
   lastMessagePosition: number = 0;
 
   status: MessageStatus = MessageStatus.loading;
-  messageList: Array<BlockChatUpgrade2Model.MessageCreatedEvent | SendMessage> = [];
+  messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> = [];
 
   showMessageList: Array<any> = [];
   reloadText: { [messageId: number]: string } = {};
@@ -158,7 +161,7 @@ export default class MyMessage extends Vue {
     return lockData;
   }
 
-  get_content(message: BlockChatUpgrade2Model.MessageCreatedEvent) {
+  get_content(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
     try {
       if (message.content.substring(0, 3) == 'u::') {
         const [_, href, text] = message.content.split('::');
@@ -220,7 +223,7 @@ export default class MyMessage extends Vue {
         if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
           return {
             type: 'encrypt',
-            text: this.reloadText[message.messageId] ? this.reloadText[message.messageId] : this.$t('message.click_to_decrypt_message'),
+            text: this.reloadText[index] ? this.reloadText[index] : this.$t('message.click_to_decrypt_message'),
           };
         } else {
           return {
@@ -262,7 +265,7 @@ export default class MyMessage extends Vue {
     }
   }
 
-  get_name(message: BlockChatUpgrade2Model.MessageCreatedEvent) {
+  get_name(message: BlockChatUpgradeModel.MessageCreatedEvent) {
     if (this.appAsync.USD_Value_Map[message.sender] && this.appAsync.USD_Value_Map[message.sender] != 0) {
       return this.appAsync.USD_Value_Map[message.sender].toFixed(2) + ' USD';
     } else {
@@ -280,11 +283,7 @@ export default class MyMessage extends Vue {
 
   get_message_header_text() {
     try {
-      return `${this.appStorage.activeRecipientText} 消息：${
-        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength != undefined
-          ? this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength
-          : ''
-      }`;
+      return `${this.appStorage.activeRecipientText}`;
     } catch (error) {
       return '';
     }
@@ -294,8 +293,8 @@ export default class MyMessage extends Vue {
     try {
       if (
         utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText]) &&
-        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdLength <=
-          this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList.length
+        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength <=
+          this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length
       ) {
         return this.$t('message.no_more_message');
       }
@@ -357,9 +356,9 @@ export default class MyMessage extends Vue {
     this.setMessageList();
   }
 
-  async decryptContent(message: BlockChatUpgrade2Model.MessageCreatedEvent) {
+  async decryptContent(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
     const content = await this.appSync.ether.P2P.decrypt(message.content.replace('e::', ''), this.appSync.userAddress);
-    this.$set(this.reloadText, message.messageId, content);
+    this.$set(this.reloadText, index, content);
   }
 
   async clickChatEncrypt() {
@@ -368,7 +367,7 @@ export default class MyMessage extends Vue {
       this.appStorage.activeRecipientText == this.appSync.userAddress
     ) {
       const publicKey = await this.appSync.ether.metamask.getEncryptionPublicKeyByAddress(this.appSync.userAddress);
-      await this.appSync.ether.blockchat.uploadData(this.appSync.ether.blockchat.dataHash('publicKey'), publicKey);
+      await this.appSync.ether.blockchat.uploadData(this.appSync.ether.blockchat.nameHash('publicKey'), publicKey);
       this.$store.dispatch('chat/getData', this.appStorage.activeRecipientText);
     } else if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt != undefined) {
       this.$set(
@@ -413,21 +412,11 @@ export default class MyMessage extends Vue {
 
   setMessageList() {
     if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
-      let messageList: Array<BlockChatUpgrade2Model.MessageCreatedEvent | SendMessage> = [];
-      let messageIdList: Array<number> = [];
+      let messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> =
+        this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText];
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList.forEach((sendMessage) => {
         messageList.push(sendMessage);
-        if (sendMessage.messageId != 0) {
-          messageIdList.push(sendMessage.messageId);
-        }
       });
-      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList
-        .filter((messageId) => {
-          return utils.have.value(this.chatAsync.messageCreatedEventMap[messageId]) && messageIdList.indexOf(messageId) == -1;
-        })
-        .forEach((messageId) => {
-          messageList.push(this.chatAsync.messageCreatedEventMap[messageId]);
-        });
       if (this.messageList.length != messageList.length) {
         messageList = messageList.sort((message_a, message_b) => {
           return message_a.createDate - message_b.createDate;
@@ -441,7 +430,9 @@ export default class MyMessage extends Vue {
   }
 
   checkMessageList() {
-    let loadAll = this.messageList.length >= this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageIdList.length;
+    let loadAll =
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength >=
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length;
     if (this.status == MessageStatus.geting) {
       this.scrollTo();
       if (loadAll) {
