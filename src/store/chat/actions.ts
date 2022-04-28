@@ -76,14 +76,16 @@ const actions: ActionTree<ChatState, RootState> = {
   async setDataUploadedEvent({ state, rootState }, recipientText: string) {
     state.sync.dataList.forEach(async (data) => {
       const recipientData = state.async.recipientMap[recipientText].recipientHash + data;
-      const dataHash = rootState.app.sync.ether.blockchat.dataHash(state.async.recipientMap[recipientText].recipientHash, data)
-      const dataBlock = await rootState.app.sync.ether.blockchat.dataBlockMap(
-        dataHash
-      );
-      Vue.set(state.async.dataUploadedEventMap, recipientData, dataBlock);
-      if (dataBlock > 0) {
-        const dataUploadedEvent = await rootState.app.sync.ether.blockchat.getDataUploadedEvent(dataHash, dataBlock, dataBlock);
-        Vue.set(state.async.dataUploadedEventMap, recipientData, dataUploadedEvent);
+      if (!state.async.dataUploadedEventMap[recipientData]) {
+        const dataHash = rootState.app.sync.ether.blockchat.dataHash(state.async.recipientMap[recipientText].recipientHash, data)
+        const dataBlock = await rootState.app.sync.ether.blockchat.dataBlockMap(
+          dataHash
+        );
+        Vue.set(state.async.dataUploadedEventMap, recipientData, dataBlock);
+        if (dataBlock > 0) {
+          const dataUploadedEvent = await rootState.app.sync.ether.blockchat.getDataUploadedEvent(dataHash, dataBlock, dataBlock);
+          Vue.set(state.async.dataUploadedEventMap, recipientData, dataUploadedEvent);
+        }
       }
     });
   },
@@ -209,7 +211,7 @@ const actions: ActionTree<ChatState, RootState> = {
     }
   },
 
-  async setActiveRecipient({ state, rootState }, recipientText: string) {
+  async setActiveRecipient({ rootState }, recipientText: string) {
     if (utils.ethers.isAddress(recipientText)) {
       recipientText = utils.ethers.getAddress(recipientText);
     }

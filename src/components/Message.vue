@@ -368,7 +368,7 @@ export default class MyMessage extends Vue {
     ) {
       const publicKey = await this.appSync.ether.metamask.getEncryptionPublicKeyByAddress(this.appSync.userAddress);
       await this.appSync.ether.blockchat.uploadData(this.appSync.ether.blockchat.nameHash('publicKey'), publicKey);
-      this.$store.dispatch('chat/getData', this.appStorage.activeRecipientText);
+      this.$store.dispatch('chat/setDataUploadedEvent', this.appStorage.activeRecipientText);
     } else if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt != undefined) {
       this.$set(
         this.chatAsync.recipientMap[this.appStorage.activeRecipientText],
@@ -411,7 +411,7 @@ export default class MyMessage extends Vue {
   }
 
   setMessageList() {
-    if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
+    if (utils.have.value(this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText])) {
       let messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> =
         this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText];
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList.forEach((sendMessage) => {
