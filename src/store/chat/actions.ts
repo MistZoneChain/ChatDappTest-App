@@ -157,8 +157,12 @@ const actions: ActionTree<ChatState, RootState> = {
   async sendMessage({ state, rootState }, content) {
     const recipientText = rootState.app.storage.activeRecipientText;
     const publicKey = state.async.dataUploadedEventMap[state.async.recipientMap[recipientText].recipientHash + 'publicKey'];
-    if (state.async.recipientMap[recipientText].useEncrypt && typeof publicKey == 'string') {
-      content = 'e::' + rootState.app.sync.ether.P2P.encrypt(content, publicKey);
+    if (state.async.recipientMap[recipientText].useEncrypt) {
+      if(typeof publicKey != 'number') {
+        content = 'e::' + rootState.app.sync.ether.P2P.encrypt(content, publicKey.content);
+      }else{
+        throw new Error('publicKey is undefined')
+      }
     }
     const sendMessage: SendMessage = {
       sender: rootState.app.sync.userAddress,
