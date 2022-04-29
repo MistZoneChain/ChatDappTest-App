@@ -68,10 +68,11 @@
                 v-if="get_message(message, index).type == 'image'"
                 :src="get_message(message, index).src"
                 :alt="get_message(message, index).alt"
-                :height="300"
+                height="200rpx"
               />
-              <video v-if="get_message(message, index).type == 'video'" controls :height="300" :src="get_message(message, index).src" />
+              <video v-if="get_message(message, index).type == 'video'" controls height="200rpx" :src="get_message(message, index).src" />
               <audio v-if="get_message(message, index).type == 'audio'" controls :src="get_message(message, index).src" />
+
             </div>
 
             <a-icon
