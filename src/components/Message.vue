@@ -41,7 +41,11 @@
               <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
             </a-popover>
 
-            <a-icon type="swap" @click="changeContent(message, index)" v-if="show_swap(message, index)" />
+            <a-icon
+              type="swap"
+              @click="changeContent(message, index)"
+              v-if="show_swap(message, index) && message.sender == appSync.userAddress"
+            />
 
             <div class="message-content-text">
               <a v-if="get_message(message, index).type == 'url'" :href="get_message(message, index).href" target="_blank"
@@ -69,6 +73,12 @@
               <video v-if="get_message(message, index).type == 'video'" controls :height="300" :src="get_message(message, index).src" />
               <audio v-if="get_message(message, index).type == 'audio'" controls :src="get_message(message, index).src" />
             </div>
+
+            <a-icon
+              type="swap"
+              @click="changeContent(message, index)"
+              v-if="show_swap(message, index) && message.sender != appSync.userAddress"
+            />
           </div>
         </template>
       </div>
