@@ -61,7 +61,7 @@ export default class MySearch extends Vue {
     this.searchData = {
       recipientText,
       recipientHash,
-      text: `${utils.format.string(recipientText,6)} ${recipientMessageBlockListLength > 0 ? '有消息' : '无消息'}`,
+      text: `${utils.format.string2(recipientText,6)} ${recipientMessageBlockListLength > 0 ? '有消息' : '无消息'}`,
     };
   }
 

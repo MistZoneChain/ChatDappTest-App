@@ -156,9 +156,16 @@ const format = {
     return address.substring(0, 6) + '...' + address.substring(38);
   },
 
-  string(str: string, halfLength: number) {
+  string2(str: string, halfLength: number) {
     if (str.length > halfLength * 2) {
       str = str.substring(0, halfLength) + '...' + str.substring(str.length - halfLength);
+    }
+    return str;
+  },
+
+  string1(str: string, length: number) {
+    if (str.length > length) {
+      str = str.substring(0, length) + '...';
     }
     return str;
   },

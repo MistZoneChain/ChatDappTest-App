@@ -10,12 +10,12 @@
         <my-avatar
           :avatar="appSync.avatarMap[chatAsync.recipientMap[recipientText].recipientHash]"
           :showButton="false"
-          :showName="utils.format.string(recipientText, 7)"
+          :showName="utils.format.string2(recipientText, 7)"
         ></my-avatar>
         <div class="room-card-message">
           <div class="room-card-name">
             <div>
-              {{ utils.format.string(recipientText, 7) }}
+              {{ utils.format.string2(recipientText, 7) }}
               <a-icon
                 type="close-circle-o"
                 class="room-card-close"
@@ -61,7 +61,7 @@ export default class MyRoom extends Vue {
   get_room_card_new_text(recipientText: string) {
     try {
       return `[${utils.format.address(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).sender)}] ${
-        messageType.getType(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).content,this).text
+        utils.format.string1(messageType.getType(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).content,this).text,6)
       }`;
     } catch (error) {
       return '';
