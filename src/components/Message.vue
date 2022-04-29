@@ -133,10 +133,7 @@ export default class MyMessage extends Vue {
   encryptContent: { [messageId: number]: string } = {};
 
   show_swap(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
-    if (this.get_content(message.content).type == 'text') {
-      return false;
-    }
-    if (this.encryptContent[index] && this.get_content(this.encryptContent[index]).type == 'text') {
+    if (this.get_content(this.get_message_content(message,index)).type == 'text') {
       return false;
     }
     return true;
@@ -175,14 +172,18 @@ export default class MyMessage extends Vue {
     };
   }
 
+  get_message_content(message: BlockChatUpgradeModel.MessageCreatedEvent,index:number){
+    if (this.encryptContent[index]) {
+      return this.encryptContent[index];
+    }
+    return message.content;
+  }
+
   get_message(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
     if (this.reloadMessage[index]) {
       return this.reloadMessage[index];
     }
-    if (this.encryptContent[index]) {
-      return this.get_content(this.encryptContent[index]);
-    }
-    return this.get_content(message.content);
+    return this.get_content(this.get_message_content(message,index));
   }
 
   get_content(content: string) {
@@ -390,16 +391,16 @@ export default class MyMessage extends Vue {
     if (!this.reloadMessage[index] || this.reloadMessage[index].type != 'text') {
       reloadMessage = {
         type: 'text',
-        text: this.encryptContent[index] ? this.encryptContent[index] : message.content,
+        text: this.get_message_content(message,index),
       };
     } else {
-      reloadMessage = this.get_content(this.encryptContent[index] ? this.encryptContent[index] : message.content);
+      reloadMessage = this.get_content(this.get_message_content(message,index));
     }
     this.$set(this.reloadMessage, index, reloadMessage);
   }
 
   async decryptContent(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
-    const content = await this.appSync.ether.P2P.decrypt(message.content.replace('e::', ''), this.appSync.userAddress);
+    const content = await this.appSync.ether.P2P.decrypt(this.get_message_content(message,index).replace('e::', ''), this.appSync.userAddress);
     this.$set(this.encryptContent, index, content);
   }
 
