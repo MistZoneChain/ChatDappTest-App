@@ -251,7 +251,7 @@ export default class MyMessage extends Vue {
         if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
           return {
             type: 'encrypt',
-            text: this.$t('message.click_to_decrypt_message'),
+            text: this.$t('message.decrypt_message'),
           };
         } else {
           return {
