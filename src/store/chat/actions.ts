@@ -192,7 +192,7 @@ const actions: ActionTree<ChatState, RootState> = {
     }
   },
 
-  async listenMessageCreatedEvent({ state, rootState }) {
+  async listenMessageCreatedEvent({ state, rootState,dispatch }) {
     rootState.app.sync.ether.blockchat.listenMessageCreatedEvent(async (messageCreatedEvent: BlockChatUpgradeModel.MessageCreatedEvent) => {
       try {
         const recipientTextList = rootState.app.storage.recipientTextList;
@@ -202,6 +202,8 @@ const actions: ActionTree<ChatState, RootState> = {
             rootState.app.sync.userAddress != messageCreatedEvent.sender
           ) {
             state.async.messageCreatedEventListMap[recipientTextList[i]].push(messageCreatedEvent);
+            await dispatch('app/setAvatar', messageCreatedEvent.sender, { root: true });
+            await dispatch('app/setUSD_Value', messageCreatedEvent.sender, { root: true });
           }
         }
       } catch (err) {

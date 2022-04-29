@@ -40,16 +40,20 @@
               </div>
               <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
             </a-popover>
+
+            <a-icon type="swap" @click="changeContent(message, index)" />
+
             <div class="message-content-text">
               <a v-if="get_content(message, index).type == 'url'" :href="get_content(message, index).href" target="_blank"
                 >{{ get_content(message, index).text }}
               </a>
               <div v-if="get_content(message, index).type == 'text'">{{ get_content(message, index).text }}</div>
-              <a-button
+              <div
                 v-if="get_content(message, index).type == 'transaction'"
                 @click="sendTransaction(get_content(message, index).transaction)"
-                >{{ get_content(message, index).text }}</a-button
               >
+                {{ get_content(message, index).text }}
+              </div>
               <div v-if="get_content(message, index).type == 'call'" @click="call(get_content(message, index).transaction)">
                 {{ get_content(message, index).text }}
               </div>
@@ -125,44 +129,46 @@ export default class MyMessage extends Vue {
 
   status: MessageStatus = MessageStatus.loading;
   messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> = [];
-  reloadText: { [messageId: number]: string } = {};
+  reloadMessage: { [messageId: number]: any } = {};
 
   get_lock() {
-    let lockData = {
-      show: false,
-      type: '',
-      class: '',
-    };
     if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
       if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == false) {
         if (!this.chatAsync.dataUploadedEventMap[this.appStorage.activeRecipientText + 'publicKey']) {
           if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
-            lockData = {
+            return {
               show: true,
               type: 'unlock',
               class: 'message-header-icon-white-blue',
             };
           }
         } else {
-          lockData = {
+          return {
             show: true,
             type: 'unlock',
             class: 'message-header-icon-blue',
           };
         }
       } else if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == true) {
-        lockData = {
+        return {
           show: true,
           type: 'lock',
           class: 'message-header-icon-red',
         };
       }
     }
-    return lockData;
+    return {
+      show: false,
+      type: '',
+      class: '',
+    };
   }
 
   get_content(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
     try {
+      if (this.reloadMessage[index]) {
+        return this.reloadMessage[index];
+      }
       if (message.content.substring(0, 3) == 'u::') {
         const [_, href, text] = message.content.split('::');
         return {
@@ -170,7 +176,8 @@ export default class MyMessage extends Vue {
           href,
           text,
         };
-      } else if (message.content.substring(0, 3) == 't::') {
+      }
+      if (message.content.substring(0, 3) == 't::') {
         const [_, contractAddress, functionName, value, types, args, text] = message.content.split('::');
         let typeList = [types];
         if (types.indexOf(',') != -1) {
@@ -192,7 +199,8 @@ export default class MyMessage extends Vue {
             callcode,
           },
         };
-      } else if (message.content.substring(0, 3) == 'c::') {
+      }
+      if (message.content.substring(0, 3) == 'c::') {
         const [_, contractAddress, functionName, types, args, returnTypes, text] = message.content.split('::');
         log(contractAddress, functionName, types, args, returnTypes, text);
         let typeList = [types];
@@ -219,11 +227,12 @@ export default class MyMessage extends Vue {
             returnTypeList,
           },
         };
-      } else if (message.content.substring(0, 3) == 'e::') {
+      }
+      if (message.content.substring(0, 3) == 'e::') {
         if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
           return {
             type: 'encrypt',
-            text: this.reloadText[index] ? this.reloadText[index] : this.$t('message.click_to_decrypt_message'),
+            text: this.$t('message.click_to_decrypt_message'),
           };
         } else {
           return {
@@ -231,33 +240,35 @@ export default class MyMessage extends Vue {
             text: this.$t('message.encrypt_message'),
           };
         }
-      } else if (message.content.substring(0, 3) == 'i::') {
+      }
+      if (message.content.substring(0, 3) == 'i::') {
         const [_, src, alt] = message.content.split('::');
         return {
           type: 'image',
           src,
           alt,
         };
-      } else if (message.content.substring(0, 3) == 'v::') {
+      }
+      if (message.content.substring(0, 3) == 'v::') {
         const [_, src] = message.content.split('::');
         return {
           type: 'video',
           src,
         };
-      } else if (message.content.substring(0, 3) == 'a::') {
+      }
+      if (message.content.substring(0, 3) == 'a::') {
         const [_, src] = message.content.split('::');
         return {
           type: 'audio',
           src,
         };
-      } else {
-        return {
-          type: 'text',
-          text: message.content,
-        };
       }
-    } catch (error) {
-      log(error);
+      return {
+        type: 'text',
+        text: message.content,
+      };
+    } catch (err) {
+      log(err);
       return {
         type: 'text',
         text: message.content,
@@ -356,9 +367,23 @@ export default class MyMessage extends Vue {
     this.setMessageList();
   }
 
+  changeContent(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
+    let reloadMessage;
+    if (!this.reloadMessage[index] || this.reloadMessage[index].type != 'text') {
+      reloadMessage = {
+        type: 'text',
+        text: message.content,
+      };
+    } else {
+      this.reloadMessage[index] = undefined;
+      reloadMessage = this.get_content(message, index);
+    }
+    this.$set(this.reloadMessage, index, reloadMessage);
+  }
+
   async decryptContent(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
     const content = await this.appSync.ether.P2P.decrypt(message.content.replace('e::', ''), this.appSync.userAddress);
-    this.$set(this.reloadText, index, content);
+    this.$set(this.reloadMessage, index, content);
   }
 
   async clickChatEncrypt() {
@@ -465,7 +490,10 @@ export default class MyMessage extends Vue {
   }
 
   getMessage() {
-    if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength > this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length) {
+    if (
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength >
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length
+    ) {
       this.status = MessageStatus.geting;
       this.$store.dispatch('chat/getMessage');
     }
