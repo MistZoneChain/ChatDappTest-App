@@ -54,9 +54,9 @@
               >
                 {{ get_message(message, index).text }}
               </a-button>
-              <div v-if="get_message(message, index).type == 'call'" @click="call(get_message(message, index).transaction)">
+              <a-button v-if="get_message(message, index).type == 'call'" @click="call(get_message(message, index).transaction, index)">
                 {{ get_message(message, index).text }}
-              </div>
+              </a-button>
               <a-button v-if="get_message(message, index).type == 'encrypt'" @click="decryptContent(message, index)">
                 {{ get_message(message, index).text }}
               </a-button>
@@ -104,6 +104,7 @@ interface Call {
   contractAddress: string;
   callcode: string;
   returnTypeList: Array<string>;
+  callTextList: Array<string>;
 }
 
 @Component({
@@ -133,7 +134,7 @@ export default class MyMessage extends Vue {
   encryptContent: { [messageId: number]: string } = {};
 
   show_swap(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
-    if (this.get_content(this.get_message_content(message,index)).type == 'text') {
+    if (this.get_content(this.get_message_content(message, index)).type == 'text') {
       return false;
     }
     return true;
@@ -172,7 +173,7 @@ export default class MyMessage extends Vue {
     };
   }
 
-  get_message_content(message: BlockChatUpgradeModel.MessageCreatedEvent,index:number){
+  get_message_content(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
     if (this.encryptContent[index]) {
       return this.encryptContent[index];
     }
@@ -183,7 +184,7 @@ export default class MyMessage extends Vue {
     if (this.reloadMessage[index]) {
       return this.reloadMessage[index];
     }
-    return this.get_content(this.get_message_content(message,index));
+    return this.get_content(this.get_message_content(message, index));
   }
 
   get_content(content: string) {
@@ -220,8 +221,7 @@ export default class MyMessage extends Vue {
         };
       }
       if (content.substring(0, 3) == 'c::') {
-        const [_, contractAddress, functionName, types, args, returnTypes, text] = content.split('::');
-        log(contractAddress, functionName, types, args, returnTypes, text);
+        const [_, contractAddress, functionName, types, args, returnTypes, callTexts, text] = content.split('::');
         let typeList = [types];
         if (types.indexOf(',') != -1) {
           typeList = types.split(',');
@@ -234,6 +234,10 @@ export default class MyMessage extends Vue {
         if (returnTypes.indexOf(',') != -1) {
           returnTypeList = returnTypes.split(',');
         }
+        let callTextList = [callTexts];
+        if (callTexts.indexOf(',') != -1) {
+          callTextList = callTexts.split(',');
+        }
         const code = utils.ethers.defaultAbiCoder.encode(typeList, argList);
         const seletor = utils.ethers.id(`${functionName}(${types})`).slice(0, 10);
         const callcode = seletor + code.substring(2);
@@ -244,6 +248,7 @@ export default class MyMessage extends Vue {
             contractAddress,
             callcode,
             returnTypeList,
+            callTextList,
           },
         };
       }
@@ -391,16 +396,19 @@ export default class MyMessage extends Vue {
     if (!this.reloadMessage[index] || this.reloadMessage[index].type != 'text') {
       reloadMessage = {
         type: 'text',
-        text: this.get_message_content(message,index),
+        text: this.get_message_content(message, index),
       };
     } else {
-      reloadMessage = this.get_content(this.get_message_content(message,index));
+      reloadMessage = this.get_content(this.get_message_content(message, index));
     }
     this.$set(this.reloadMessage, index, reloadMessage);
   }
 
   async decryptContent(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
-    const content = await this.appSync.ether.P2P.decrypt(this.get_message_content(message,index).replace('e::', ''), this.appSync.userAddress);
+    const content = await this.appSync.ether.P2P.decrypt(
+      this.get_message_content(message, index).replace('e::', ''),
+      this.appSync.userAddress
+    );
     this.$set(this.encryptContent, index, content);
   }
 
@@ -436,16 +444,26 @@ export default class MyMessage extends Vue {
     }
   }
 
-  async call(call: Call) {
+  async call(call: Call, index: number) {
     try {
       if (this.appSync.ether.provider) {
         const res = await this.appSync.ether.provider.call({
           to: call.contractAddress,
           data: call.callcode,
         });
-        const data = utils.ethers.defaultAbiCoder.decode(call.returnTypeList, res);
-        log(data.toString());
-        return data.toString();
+        const datas = utils.ethers.defaultAbiCoder.decode(call.returnTypeList, res);
+        let dataList = [datas];
+        if (datas.indexOf(',') != -1) {
+          dataList = datas.split(',');
+        }
+        let text = '';
+        for (let i = 0; i < dataList.length; i++) {
+          text += `${call.callTextList[i]}(${dataList[i]})`;
+        }
+        this.$set(this.reloadMessage, index, {
+          type: 'text',
+          text,
+        });
       }
     } catch (err: any) {
       log(err);
