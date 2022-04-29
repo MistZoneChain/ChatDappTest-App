@@ -155,6 +155,13 @@ const format = {
   address(address: string) {
     return address.substring(0, 6) + '...' + address.substring(38);
   },
+
+  string(str: string, halfLength: number) {
+    if (str.length > halfLength * 2) {
+      str = str.substring(0, halfLength) + '...' + str.substring(str.length - halfLength);
+    }
+    return str
+  }
 };
 
 const go = {

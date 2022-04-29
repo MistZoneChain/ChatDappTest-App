@@ -52,7 +52,7 @@ export default class MySearch extends Vue {
   async handleSearch(recipientText: string) {
     let recipientHash;
     if (utils.ethers.isAddress(recipientText)) {
-      recipientHash = recipientText.toLowerCase();
+      recipientHash = utils.ethers.getAddress(recipientText);
     } else {
       recipientHash = this.appSync.ether.blockchat.recipientHash(recipientText).toString();
     }
@@ -61,7 +61,7 @@ export default class MySearch extends Vue {
     this.searchData = {
       recipientText,
       recipientHash,
-      text: `${recipientText} ${recipientMessageBlockListLength > 0 ? '有消息' : '无消息'}`,
+      text: `${utils.format.string(recipientText,6)} ${recipientMessageBlockListLength > 0 ? '有消息' : '无消息'}`,
     };
   }
 

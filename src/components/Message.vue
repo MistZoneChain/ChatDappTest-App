@@ -465,8 +465,10 @@ export default class MyMessage extends Vue {
   }
 
   getMessage() {
-    this.status = MessageStatus.geting;
-    this.$store.dispatch('chat/getMessage');
+    if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength > this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length) {
+      this.status = MessageStatus.geting;
+      this.$store.dispatch('chat/getMessage');
+    }
   }
 
   scrollToBottom() {
