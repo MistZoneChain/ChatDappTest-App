@@ -41,33 +41,33 @@
               <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
             </a-popover>
 
-            <a-icon type="swap" @click="changeContent(message, index)" />
+            <a-icon type="swap" @click="changeContent(message, index)" v-if="get_message_content(message).type != 'text'"/>
 
             <div class="message-content-text">
-              <a v-if="get_content(message, index).type == 'url'" :href="get_content(message, index).href" target="_blank"
-                >{{ get_content(message, index).text }}
+              <a v-if="get_message(message, index).type == 'url'" :href="get_message(message, index).href" target="_blank"
+                >{{ get_message(message, index).text }}
               </a>
-              <div v-if="get_content(message, index).type == 'text'">{{ get_content(message, index).text }}</div>
+              <div v-if="get_message(message, index).type == 'text'">{{ get_message(message, index).text }}</div>
               <div
-                v-if="get_content(message, index).type == 'transaction'"
-                @click="sendTransaction(get_content(message, index).transaction)"
+                v-if="get_message(message, index).type == 'transaction'"
+                @click="sendTransaction(get_message(message, index).transaction)"
               >
-                {{ get_content(message, index).text }}
+                {{ get_message(message, index).text }}
               </div>
-              <div v-if="get_content(message, index).type == 'call'" @click="call(get_content(message, index).transaction)">
-                {{ get_content(message, index).text }}
+              <div v-if="get_message(message, index).type == 'call'" @click="call(get_message(message, index).transaction)">
+                {{ get_message(message, index).text }}
               </div>
-              <div v-if="get_content(message, index).type == 'encrypt'" @click="decryptContent(message, index)">
-                {{ get_content(message, index).text }}
+              <div v-if="get_message(message, index).type == 'encrypt'" @click="decryptContent(message, index)">
+                {{ get_message(message, index).text }}
               </div>
               <img
-                v-if="get_content(message, index).type == 'image'"
-                :src="get_content(message, index).src"
-                :alt="get_content(message, index).alt"
+                v-if="get_message(message, index).type == 'image'"
+                :src="get_message(message, index).src"
+                :alt="get_message(message, index).alt"
                 :height="300"
               />
-              <video v-if="get_content(message, index).type == 'video'" controls :height="300" :src="get_content(message, index).src" />
-              <audio v-if="get_content(message, index).type == 'audio'" controls :src="get_content(message, index).src" />
+              <video v-if="get_message(message, index).type == 'video'" controls :height="300" :src="get_message(message, index).src" />
+              <audio v-if="get_message(message, index).type == 'audio'" controls :src="get_message(message, index).src" />
             </div>
           </div>
         </template>
@@ -164,11 +164,15 @@ export default class MyMessage extends Vue {
     };
   }
 
-  get_content(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
+  get_message(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
+    if (this.reloadMessage[index]) {
+      return this.reloadMessage[index];
+    }
+    return this.get_message_content(message);
+  }
+
+  get_message_content(message: BlockChatUpgradeModel.MessageCreatedEvent) {
     try {
-      if (this.reloadMessage[index]) {
-        return this.reloadMessage[index];
-      }
       if (message.content.substring(0, 3) == 'u::') {
         const [_, href, text] = message.content.split('::');
         return {
@@ -375,8 +379,7 @@ export default class MyMessage extends Vue {
         text: message.content,
       };
     } else {
-      this.reloadMessage[index] = undefined;
-      reloadMessage = this.get_content(message, index);
+      reloadMessage = this.get_message_content(message);
     }
     this.$set(this.reloadMessage, index, reloadMessage);
   }
