@@ -160,8 +160,8 @@ const format = {
     if (str.length > halfLength * 2) {
       str = str.substring(0, halfLength) + '...' + str.substring(str.length - halfLength);
     }
-    return str
-  }
+    return str;
+  },
 };
 
 const go = {

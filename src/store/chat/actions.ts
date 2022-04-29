@@ -192,7 +192,7 @@ const actions: ActionTree<ChatState, RootState> = {
     }
   },
 
-  async listenMessageCreatedEvent({ state, rootState,dispatch }) {
+  async listenMessageCreatedEvent({ state, rootState, dispatch }) {
     rootState.app.sync.ether.blockchat.listenMessageCreatedEvent(async (messageCreatedEvent: BlockChatUpgradeModel.MessageCreatedEvent) => {
       try {
         const recipientTextList = rootState.app.storage.recipientTextList;
