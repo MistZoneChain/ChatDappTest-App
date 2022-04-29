@@ -48,18 +48,18 @@
                 >{{ get_message(message, index).text }}
               </a>
               <div v-if="get_message(message, index).type == 'text'">{{ get_message(message, index).text }}</div>
-              <div
+              <a-button
                 v-if="get_message(message, index).type == 'transaction'"
                 @click="sendTransaction(get_message(message, index).transaction)"
               >
                 {{ get_message(message, index).text }}
-              </div>
+              </a-button>
               <div v-if="get_message(message, index).type == 'call'" @click="call(get_message(message, index).transaction)">
                 {{ get_message(message, index).text }}
               </div>
-              <div v-if="get_message(message, index).type == 'encrypt'" @click="decryptContent(message, index)">
+              <a-button v-if="get_message(message, index).type == 'encrypt'" @click="decryptContent(message, index)">
                 {{ get_message(message, index).text }}
-              </div>
+              </a-button>
               <img
                 v-if="get_message(message, index).type == 'image'"
                 :src="get_message(message, index).src"
