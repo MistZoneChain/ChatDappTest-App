@@ -41,7 +41,7 @@
               <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
             </a-popover>
 
-            <a-icon type="swap" @click="changeContent(message, index)" v-if="get_content(message).type != 'text'"/>
+            <a-icon type="swap" @click="changeContent(message, index)" v-if="show_swap(message, index)" />
 
             <div class="message-content-text">
               <a v-if="get_message(message, index).type == 'url'" :href="get_message(message, index).href" target="_blank"
@@ -132,6 +132,16 @@ export default class MyMessage extends Vue {
   reloadMessage: { [messageId: number]: any } = {};
   encryptContent: { [messageId: number]: string } = {};
 
+  show_swap(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
+    if (this.get_content(message.content).type == 'text') {
+      return false;
+    }
+    if (this.encryptContent[index] && this.get_content(this.encryptContent[index]).type == 'text') {
+      return false;
+    }
+    return true;
+  }
+
   get_lock() {
     if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
       if (this.chatAsync.recipientMap[this.appStorage.activeRecipientText].useEncrypt == false) {
@@ -169,7 +179,7 @@ export default class MyMessage extends Vue {
     if (this.reloadMessage[index]) {
       return this.reloadMessage[index];
     }
-    if(this.encryptContent[index]){
+    if (this.encryptContent[index]) {
       return this.get_content(this.encryptContent[index]);
     }
     return this.get_content(message.content);
@@ -380,10 +390,10 @@ export default class MyMessage extends Vue {
     if (!this.reloadMessage[index] || this.reloadMessage[index].type != 'text') {
       reloadMessage = {
         type: 'text',
-        text: message.content,
+        text: this.encryptContent[index] ? this.encryptContent[index] : message.content,
       };
     } else {
-      reloadMessage = this.get_content(message.content);
+      reloadMessage = this.get_content(this.encryptContent[index] ? this.encryptContent[index] : message.content);
     }
     this.$set(this.reloadMessage, index, reloadMessage);
   }
