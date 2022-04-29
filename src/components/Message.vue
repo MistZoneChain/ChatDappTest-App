@@ -41,7 +41,7 @@
               <a-icon :type="get_avatar_card(message).type" :class="get_avatar_card(message).class" />
             </a-popover>
 
-            <a-icon type="swap" @click="changeContent(message, index)" v-if="get_message_content(message).type != 'text'"/>
+            <a-icon type="swap" @click="changeContent(message, index)" v-if="get_content(message).type != 'text'"/>
 
             <div class="message-content-text">
               <a v-if="get_message(message, index).type == 'url'" :href="get_message(message, index).href" target="_blank"
@@ -130,6 +130,7 @@ export default class MyMessage extends Vue {
   status: MessageStatus = MessageStatus.loading;
   messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> = [];
   reloadMessage: { [messageId: number]: any } = {};
+  encryptContent: { [messageId: number]: string } = {};
 
   get_lock() {
     if (utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText])) {
@@ -168,21 +169,24 @@ export default class MyMessage extends Vue {
     if (this.reloadMessage[index]) {
       return this.reloadMessage[index];
     }
-    return this.get_message_content(message);
+    if(this.encryptContent[index]){
+      return this.get_content(this.encryptContent[index]);
+    }
+    return this.get_content(message.content);
   }
 
-  get_message_content(message: BlockChatUpgradeModel.MessageCreatedEvent) {
+  get_content(content: string) {
     try {
-      if (message.content.substring(0, 3) == 'u::') {
-        const [_, href, text] = message.content.split('::');
+      if (content.substring(0, 3) == 'u::') {
+        const [_, href, text] = content.split('::');
         return {
           type: 'url',
           href,
           text,
         };
       }
-      if (message.content.substring(0, 3) == 't::') {
-        const [_, contractAddress, functionName, value, types, args, text] = message.content.split('::');
+      if (content.substring(0, 3) == 't::') {
+        const [_, contractAddress, functionName, value, types, args, text] = content.split('::');
         let typeList = [types];
         if (types.indexOf(',') != -1) {
           typeList = types.split(',');
@@ -204,8 +208,8 @@ export default class MyMessage extends Vue {
           },
         };
       }
-      if (message.content.substring(0, 3) == 'c::') {
-        const [_, contractAddress, functionName, types, args, returnTypes, text] = message.content.split('::');
+      if (content.substring(0, 3) == 'c::') {
+        const [_, contractAddress, functionName, types, args, returnTypes, text] = content.split('::');
         log(contractAddress, functionName, types, args, returnTypes, text);
         let typeList = [types];
         if (types.indexOf(',') != -1) {
@@ -232,7 +236,7 @@ export default class MyMessage extends Vue {
           },
         };
       }
-      if (message.content.substring(0, 3) == 'e::') {
+      if (content.substring(0, 3) == 'e::') {
         if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
           return {
             type: 'encrypt',
@@ -245,23 +249,23 @@ export default class MyMessage extends Vue {
           };
         }
       }
-      if (message.content.substring(0, 3) == 'i::') {
-        const [_, src, alt] = message.content.split('::');
+      if (content.substring(0, 3) == 'i::') {
+        const [_, src, alt] = content.split('::');
         return {
           type: 'image',
           src,
           alt,
         };
       }
-      if (message.content.substring(0, 3) == 'v::') {
-        const [_, src] = message.content.split('::');
+      if (content.substring(0, 3) == 'v::') {
+        const [_, src] = content.split('::');
         return {
           type: 'video',
           src,
         };
       }
-      if (message.content.substring(0, 3) == 'a::') {
-        const [_, src] = message.content.split('::');
+      if (content.substring(0, 3) == 'a::') {
+        const [_, src] = content.split('::');
         return {
           type: 'audio',
           src,
@@ -269,13 +273,13 @@ export default class MyMessage extends Vue {
       }
       return {
         type: 'text',
-        text: message.content,
+        text: content,
       };
     } catch (err) {
       log(err);
       return {
         type: 'text',
-        text: message.content,
+        text: content,
       };
     }
   }
@@ -379,14 +383,14 @@ export default class MyMessage extends Vue {
         text: message.content,
       };
     } else {
-      reloadMessage = this.get_message_content(message);
+      reloadMessage = this.get_content(message.content);
     }
     this.$set(this.reloadMessage, index, reloadMessage);
   }
 
   async decryptContent(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
     const content = await this.appSync.ether.P2P.decrypt(message.content.replace('e::', ''), this.appSync.userAddress);
-    this.$set(this.reloadMessage, index, content);
+    this.$set(this.encryptContent, index, content);
   }
 
   async clickChatEncrypt() {
