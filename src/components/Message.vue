@@ -115,6 +115,7 @@ interface Call {
   contractAddress: string;
   callcode: string;
   returnTypeList: Array<string>;
+  numZeroList: Array<number>;
   callTextList: Array<string>;
 }
 
@@ -355,8 +356,13 @@ export default class MyMessage extends Vue {
           dataList = datas.split(',');
         }
         let text = '';
+        let numZeroListIndex = 0;
         for (let i = 0; i < dataList.length; i++) {
-          text += `${call.callTextList[i]}(${dataList[i]})`;
+          if(call.returnTypeList[i].indexOf('int')!=-1) {
+            dataList[i] = dataList[i].toString().substring(0,dataList[i].toString().length-call.numZeroList[numZeroListIndex]) as any;
+            numZeroListIndex++;
+          }
+          text += `${call.callTextList[i]}${dataList[i]}`;
         }
         this.$set(this.reloadMessage, index, {
           type: 'text',
