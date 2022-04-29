@@ -148,14 +148,6 @@ const format = {
     }
   },
 
-  hash(hash: string) {
-    return hash.substring(0, 6) + '...' + hash.substring(60);
-  },
-
-  address(address: string) {
-    return address.substring(0, 6) + '...' + address.substring(38);
-  },
-
   string2(str: string, halfLength: number) {
     if (str.length > halfLength * 2) {
       str = str.substring(0, halfLength) + '...' + str.substring(str.length - halfLength);

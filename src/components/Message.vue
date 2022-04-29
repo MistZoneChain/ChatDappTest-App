@@ -26,7 +26,7 @@
               :avatar="appSync.avatarMap[message.sender]"
               :name="get_name(message)"
               :time="utils.format.date(message.createDate)"
-              :showName="utils.format.address(message.sender)"
+              :showName="utils.format.string2(message.sender,6)"
               @goTo="utils.go.address(appSync.ether.chainId, message.sender)"
             ></my-avatar>
 
@@ -202,7 +202,7 @@ export default class MyMessage extends Vue {
     if (this.appAsync.USD_Value_Map[message.sender] && this.appAsync.USD_Value_Map[message.sender] != 0) {
       return this.appAsync.USD_Value_Map[message.sender].toFixed(2) + ' USD';
     } else {
-      return utils.format.address(message.sender);
+      return utils.format.string2(message.sender,6);
     }
   }
 
@@ -248,19 +248,19 @@ export default class MyMessage extends Vue {
       return {
         type: 'loading',
         class: 'loading2-icon',
-        text: message.hash ? utils.format.hash(message.hash) : '',
+        text: message.hash ? utils.format.string2(message.hash,6) : '',
       };
     } else if (message.status == SendMessageStatus.error) {
       return {
         type: 'exclamation-circle',
         class: 'error-icon',
-        text: message.hash ? utils.format.hash(message.hash) : '',
+        text: message.hash ? utils.format.string2(message.hash,6) : '',
       };
     } else if (message.status == SendMessageStatus.success) {
       return {
         type: 'check-circle',
         class: 'check-icon',
-        text: message.hash ? utils.format.hash(message.hash) : '',
+        text: message.hash ? utils.format.string2(message.hash,6) : '',
       };
     }
   }

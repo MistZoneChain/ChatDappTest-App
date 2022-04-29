@@ -60,8 +60,8 @@ export default class MyRoom extends Vue {
 
   get_room_card_new_text(recipientText: string) {
     try {
-      return `[${utils.format.address(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).sender)}] ${
-        utils.format.string1(messageType.getType(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).content,this).text,6)
+      return `[${utils.format.string2(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).sender,4)}]${
+        utils.format.string1(messageType.getType(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).content,this).text,7)
       }`;
     } catch (error) {
       return '';
