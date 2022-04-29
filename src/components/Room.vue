@@ -37,7 +37,7 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
 import { AppSync, AppAsync, AppStorage, ChatSync, ChatAsync } from '@/store';
-import { utils, log } from '@/const';
+import { utils, log,messageType } from '@/const';
 import MyAvatar from '@/components/Avatar.vue';
 
 const chatModule = namespace('chat');
@@ -61,7 +61,7 @@ export default class MyRoom extends Vue {
   get_room_card_new_text(recipientText: string) {
     try {
       return `[${utils.format.address(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).sender)}] ${
-        utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).content
+        messageType.getType(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).content,this).text
       }`;
     } catch (error) {
       return '';

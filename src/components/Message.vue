@@ -94,7 +94,7 @@ import MyAvatar from '@/components/Avatar.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
 import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, BlockChatUpgradeModel, SendMessageStatus } from '@/store';
-import { utils, log, BigNumber } from '@/const';
+import { utils, log, BigNumber,messageType } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -145,7 +145,7 @@ export default class MyMessage extends Vue {
   encryptContent: { [messageId: number]: string } = {};
 
   show_swap(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
-    if (this.get_content(this.get_message_content(message, index)).type == 'text') {
+    if (messageType.getType(this.get_message_content(message, index),this).type == 'text') {
       return false;
     }
     return true;
@@ -195,120 +195,7 @@ export default class MyMessage extends Vue {
     if (this.reloadMessage[index]) {
       return this.reloadMessage[index];
     }
-    return this.get_content(this.get_message_content(message, index));
-  }
-
-  get_content(content: string) {
-    try {
-      if (content.substring(0, 3) == 'u::') {
-        const [_, href, text] = content.split('::');
-        return {
-          type: 'url',
-          href,
-          text,
-        };
-      }
-      if (content.substring(0, 3) == 't::') {
-        const [_, contractAddress, functionName, value, types, args, text] = content.split('::');
-        let typeList = [types];
-        if (types.indexOf(',') != -1) {
-          typeList = types.split(',');
-        }
-        let argList = [args];
-        if (args.indexOf(',') != -1) {
-          argList = args.split(',');
-        }
-        const code = utils.ethers.defaultAbiCoder.encode(typeList, argList);
-        const seletor = utils.ethers.id(`${functionName}(${types})`).slice(0, 10);
-        const callcode = seletor + code.substring(2);
-        return {
-          type: 'transaction',
-          text,
-          transaction: {
-            contractAddress,
-            value: BigNumber.from(value),
-            callcode,
-          },
-        };
-      }
-      if (content.substring(0, 3) == 'c::') {
-        const [_, contractAddress, functionName, types, args, returnTypes, callTexts, text] = content.split('::');
-        let typeList = [types];
-        if (types.indexOf(',') != -1) {
-          typeList = types.split(',');
-        }
-        let argList = [args];
-        if (args.indexOf(',') != -1) {
-          argList = args.split(',');
-        }
-        let returnTypeList = [returnTypes];
-        if (returnTypes.indexOf(',') != -1) {
-          returnTypeList = returnTypes.split(',');
-        }
-        let callTextList = [callTexts];
-        if (callTexts.indexOf(',') != -1) {
-          callTextList = callTexts.split(',');
-        }
-        const code = utils.ethers.defaultAbiCoder.encode(typeList, argList);
-        const seletor = utils.ethers.id(`${functionName}(${types})`).slice(0, 10);
-        const callcode = seletor + code.substring(2);
-        return {
-          type: 'call',
-          text,
-          transaction: {
-            contractAddress,
-            callcode,
-            returnTypeList,
-            callTextList,
-          },
-        };
-      }
-      if (content.substring(0, 3) == 'e::') {
-        if (this.appStorage.activeRecipientText == this.appSync.userAddress) {
-          return {
-            type: 'encrypt',
-            text: this.$t('message.decrypt_message'),
-          };
-        } else {
-          return {
-            type: 'text',
-            text: this.$t('message.encrypt_message'),
-          };
-        }
-      }
-      if (content.substring(0, 3) == 'i::') {
-        const [_, src, alt] = content.split('::');
-        return {
-          type: 'image',
-          src,
-          alt,
-        };
-      }
-      if (content.substring(0, 3) == 'v::') {
-        const [_, src] = content.split('::');
-        return {
-          type: 'video',
-          src,
-        };
-      }
-      if (content.substring(0, 3) == 'a::') {
-        const [_, src] = content.split('::');
-        return {
-          type: 'audio',
-          src,
-        };
-      }
-      return {
-        type: 'text',
-        text: content,
-      };
-    } catch (err) {
-      log(err);
-      return {
-        type: 'text',
-        text: content,
-      };
-    }
+    return messageType.getType(this.get_message_content(message, index),this);
   }
 
   get_name(message: BlockChatUpgradeModel.MessageCreatedEvent) {
@@ -410,7 +297,7 @@ export default class MyMessage extends Vue {
         text: this.get_message_content(message, index),
       };
     } else {
-      reloadMessage = this.get_content(this.get_message_content(message, index));
+      reloadMessage = messageType.getType(this.get_message_content(message, index),this);
     }
     this.$set(this.reloadMessage, index, reloadMessage);
   }
