@@ -37,7 +37,7 @@
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { namespace } from 'vuex-class';
 import { AppSync, AppAsync, AppStorage, ChatSync, ChatAsync } from '@/store';
-import { utils, log,messageType } from '@/const';
+import { utils, log, messageType } from '@/const';
 import MyAvatar from '@/components/Avatar.vue';
 
 const chatModule = namespace('chat');
@@ -60,9 +60,15 @@ export default class MyRoom extends Vue {
 
   get_room_card_new_text(recipientText: string) {
     try {
-      return `[${utils.format.string2(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).sender,4)}]${
-        utils.format.string1(messageType.getType(utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText]).content,this).text,7)
-      }`;
+      const lastMessage = utils.get.last(
+        this.chatAsync.messageCreatedEventListMap[recipientText][
+          utils.get.last(this.chatAsync.recipientMap[recipientText].messageBlockList)
+        ]
+      );
+      return `[${utils.format.string2(lastMessage.sender, 4)}]${utils.format.string1(
+        messageType.getType(lastMessage.content, this).text,
+        7
+      )}`;
     } catch (error) {
       return '';
     }
@@ -80,20 +86,28 @@ export default class MyRoom extends Vue {
 
   setRecipient() {
     let recipientTextList = this.appStorage.recipientTextList.filter((recipientText) => {
-      return utils.have.value(this.chatAsync.recipientMap[recipientText]);
+      return (
+        utils.have.value(this.chatAsync.recipientMap[recipientText])
+      );
     });
     if (recipientTextList.length >= 2) {
       recipientTextList = recipientTextList.sort((recipientText_a, recipientText_b) => {
-        if (
-          utils.have.value(this.chatAsync.messageCreatedEventListMap[recipientText_a]) &&
-          utils.have.value(this.chatAsync.messageCreatedEventListMap[recipientText_b])
-        ) {
-          return (
-            utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText_b]).createDate -
-            utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText_a]).createDate
-          );
+        let lastMessage_a;
+        try {
+          lastMessage_a =utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText_a][
+            utils.get.last(this.chatAsync.recipientMap[recipientText_a].messageBlockList)
+          ]);
+        } catch (error) {}
+        let lastMessage_b;
+        try {
+          lastMessage_b =utils.get.last(this.chatAsync.messageCreatedEventListMap[recipientText_b][
+            utils.get.last(this.chatAsync.recipientMap[recipientText_b].messageBlockList)
+          ]);
+        } catch (error) {}
+        if (lastMessage_a && lastMessage_b) {
+          return lastMessage_a.createDate - lastMessage_b.createDate;
         } else {
-          if (utils.have.value(this.chatAsync.messageCreatedEventListMap[recipientText_a])) {
+          if (lastMessage_a) {
             return -1;
           }
           return 1;

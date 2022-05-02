@@ -26,7 +26,7 @@
               :avatar="appSync.avatarMap[message.sender]"
               :name="get_name(message)"
               :time="utils.format.date(message.createDate)"
-              :showName="utils.format.string2(message.sender,6)"
+              :showName="utils.format.string2(message.sender, 6)"
               @goTo="utils.go.address(appSync.ether.chainId, message.sender)"
             ></my-avatar>
 
@@ -72,7 +72,6 @@
               />
               <video v-if="get_message(message, index).type == 'video'" controls height="200rpx" :src="get_message(message, index).src" />
               <audio v-if="get_message(message, index).type == 'audio'" controls :src="get_message(message, index).src" />
-
             </div>
 
             <a-icon
@@ -94,7 +93,7 @@ import MyAvatar from '@/components/Avatar.vue';
 import MyInput from '@/components/Input.vue';
 import { namespace } from 'vuex-class';
 import { AppStorage, AppSync, AppAsync, ChatSync, ChatAsync, SendMessage, BlockChatUpgradeModel, SendMessageStatus } from '@/store';
-import { utils, log, BigNumber,messageType } from '@/const';
+import { utils, log, BigNumber, messageType } from '@/const';
 
 const chatModule = namespace('chat');
 const appModule = namespace('app');
@@ -146,7 +145,7 @@ export default class MyMessage extends Vue {
   encryptContent: { [messageId: number]: string } = {};
 
   show_swap(message: BlockChatUpgradeModel.MessageCreatedEvent, index: number) {
-    if (messageType.getType(this.get_message_content(message, index),this).type == 'text') {
+    if (messageType.getType(this.get_message_content(message, index), this).type == 'text') {
       return false;
     }
     return true;
@@ -196,14 +195,14 @@ export default class MyMessage extends Vue {
     if (this.reloadMessage[index]) {
       return this.reloadMessage[index];
     }
-    return messageType.getType(this.get_message_content(message, index),this);
+    return messageType.getType(this.get_message_content(message, index), this);
   }
 
   get_name(message: BlockChatUpgradeModel.MessageCreatedEvent) {
     if (this.appAsync.USD_Value_Map[message.sender] && this.appAsync.USD_Value_Map[message.sender] != 0) {
       return this.appAsync.USD_Value_Map[message.sender].toFixed(2) + ' USD';
     } else {
-      return utils.format.string2(message.sender,6);
+      return utils.format.string2(message.sender, 6);
     }
   }
 
@@ -226,9 +225,10 @@ export default class MyMessage extends Vue {
   get_noData_text() {
     try {
       if (
-        utils.have.value(this.chatAsync.recipientMap[this.appStorage.activeRecipientText]) &&
-        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength <=
-          this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length
+        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength ==
+          this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length &&
+        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length ==
+          Object.keys(this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]).length
       ) {
         return this.$t('message.no_more_message');
       }
@@ -249,19 +249,19 @@ export default class MyMessage extends Vue {
       return {
         type: 'loading',
         class: 'loading2-icon',
-        text: message.hash ? utils.format.string2(message.hash,6) : '',
+        text: message.hash ? utils.format.string2(message.hash, 6) : '',
       };
     } else if (message.status == SendMessageStatus.error) {
       return {
         type: 'exclamation-circle',
         class: 'error-icon',
-        text: message.hash ? utils.format.string2(message.hash,6) : '',
+        text: message.hash ? utils.format.string2(message.hash, 6) : '',
       };
     } else if (message.status == SendMessageStatus.success) {
       return {
         type: 'check-circle',
         class: 'check-icon',
-        text: message.hash ? utils.format.string2(message.hash,6) : '',
+        text: message.hash ? utils.format.string2(message.hash, 6) : '',
       };
     }
   }
@@ -298,7 +298,7 @@ export default class MyMessage extends Vue {
         text: this.get_message_content(message, index),
       };
     } else {
-      reloadMessage = messageType.getType(this.get_message_content(message, index),this);
+      reloadMessage = messageType.getType(this.get_message_content(message, index), this);
     }
     this.$set(this.reloadMessage, index, reloadMessage);
   }
@@ -358,8 +358,8 @@ export default class MyMessage extends Vue {
         let text = '';
         let numZeroListIndex = 0;
         for (let i = 0; i < dataList.length; i++) {
-          if(call.returnTypeList[i].indexOf('int')!=-1) {
-            dataList[i] = dataList[i].toString().substring(0,dataList[i].toString().length-call.numZeroList[numZeroListIndex]) as any;
+          if (call.returnTypeList[i].indexOf('int') != -1) {
+            dataList[i] = dataList[i].toString().substring(0, dataList[i].toString().length - call.numZeroList[numZeroListIndex]) as any;
             numZeroListIndex++;
           }
           text += `${call.callTextList[i]}${dataList[i]}`;
@@ -376,12 +376,12 @@ export default class MyMessage extends Vue {
   }
 
   setMessageList() {
-    if (this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]) {
+    try {
       let messageList: Array<BlockChatUpgradeModel.MessageCreatedEvent | SendMessage> = [];
-      messageList.push(
-        ...this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList,
-        ...this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]
-      );
+      messageList.push(...this.chatAsync.recipientMap[this.appStorage.activeRecipientText].sendMessageList);
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.forEach((messageBlock) => {
+        messageList.push(...this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText][messageBlock]);
+      });
       if (this.messageList.length != messageList.length) {
         messageList = messageList.sort((message_a, message_b) => {
           return message_a.createDate - message_b.createDate;
@@ -391,13 +391,15 @@ export default class MyMessage extends Vue {
       } else if (this.messageList.length == 0) {
         this.checkMessageList();
       }
-    }
+    } catch (error) {}
   }
 
   checkMessageList() {
     let loadAll =
       this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length ==
-      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength;
+        this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockListLength &&
+      this.chatAsync.recipientMap[this.appStorage.activeRecipientText].messageBlockList.length ==
+        Object.keys(this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]).length;
     if (this.status == MessageStatus.geting) {
       this.scrollTo();
       if (loadAll) {

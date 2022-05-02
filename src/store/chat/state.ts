@@ -30,7 +30,7 @@ export interface Recipient {
 }
 
 export interface MessageCreatedEventMap {
-  [recipientText: string]: Array<BlockChatUpgradeModel.MessageCreatedEvent>;
+  [recipientText: string]: { [messageBlock: number]: Array<BlockChatUpgradeModel.MessageCreatedEvent> };
 }
 
 export interface DataUploadedEventMap {

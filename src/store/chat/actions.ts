@@ -120,7 +120,7 @@ const actions: ActionTree<ChatState, RootState> = {
       state.async.blockSkip = await rootState.app.sync.ether.blockchat.blockSkip();
     }
     if (!state.async.messageCreatedEventListMap[recipientText]) {
-      Vue.set(state.async.messageCreatedEventListMap, recipientText, []);
+      Vue.set(state.async.messageCreatedEventListMap, recipientText, {});
       state.async.recipientMap[recipientText].messageBlockList.forEach(async (messageBlock) => {
         try {
           if (state.async.blockSkip) {
@@ -130,7 +130,7 @@ const actions: ActionTree<ChatState, RootState> = {
               messageBlock,
               messageBlock + state.async.blockSkip
             );
-            state.async.messageCreatedEventListMap[recipientText].push(...messageCreatedEventList);
+            Vue.set(state.async.messageCreatedEventListMap[recipientText], messageBlock, messageCreatedEventList);
             messageCreatedEventList.forEach(async (messageCreatedEvent) => {
               try {
                 await dispatch('app/setAvatar', messageCreatedEvent.sender, { root: true });
@@ -201,7 +201,15 @@ const actions: ActionTree<ChatState, RootState> = {
             messageCreatedEvent.recipientHash == state.async.recipientMap[recipientTextList[i]].recipientHash &&
             rootState.app.sync.userAddress != messageCreatedEvent.sender
           ) {
-            state.async.messageCreatedEventListMap[recipientTextList[i]].push(messageCreatedEvent);
+            if(state.async.recipientMap[recipientTextList[i]].messageBlockListLength!=0){
+              state.async.messageCreatedEventListMap[recipientTextList[i]][
+                utils.get.last(state.async.recipientMap[recipientTextList[i]].messageBlockList)
+              ].push(messageCreatedEvent);
+            }else{
+              Vue.set(state.async.recipientMap[recipientTextList[i]], 'messageBlockList', [0]);
+              Vue.set(state.async.recipientMap[recipientTextList[i]], 'messageBlockListLength', 1);
+              Vue.set(state.async.messageCreatedEventListMap[recipientTextList[i]], 0, [messageCreatedEvent]);
+            }
             await dispatch('app/setAvatar', messageCreatedEvent.sender, { root: true });
             await dispatch('app/setUSD_Value', messageCreatedEvent.sender, { root: true });
           }
