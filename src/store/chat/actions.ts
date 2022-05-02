@@ -201,11 +201,11 @@ const actions: ActionTree<ChatState, RootState> = {
             messageCreatedEvent.recipientHash == state.async.recipientMap[recipientTextList[i]].recipientHash &&
             rootState.app.sync.userAddress != messageCreatedEvent.sender
           ) {
-            if(state.async.recipientMap[recipientTextList[i]].messageBlockListLength!=0){
+            if (state.async.recipientMap[recipientTextList[i]].messageBlockListLength != 0) {
               state.async.messageCreatedEventListMap[recipientTextList[i]][
                 utils.get.last(state.async.recipientMap[recipientTextList[i]].messageBlockList)
               ].push(messageCreatedEvent);
-            }else{
+            } else {
               Vue.set(state.async.recipientMap[recipientTextList[i]], 'messageBlockList', [0]);
               Vue.set(state.async.recipientMap[recipientTextList[i]], 'messageBlockListLength', 1);
               Vue.set(state.async.messageCreatedEventListMap[recipientTextList[i]], 0, [messageCreatedEvent]);
