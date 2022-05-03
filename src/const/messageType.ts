@@ -105,6 +105,13 @@ function getType(content: string, that: any) {
         src,
       };
     }
+    if (content.substring(0, 4) == 'tr::') {
+      const [_, from, to, amount] = content.split('::');
+      return {
+        type: 'tr',
+        text: `${from} send ${amount.length > 18 ? amount.substring(0, amount.length - 18) : '0.' + amount} to ${to}`,
+      };
+    }
     return {
       type: 'text',
       text: content,

@@ -52,6 +52,7 @@
                 >{{ get_message(message, index).text }}
               </a>
               <div v-if="get_message(message, index).type == 'text'">{{ get_message(message, index).text }}</div>
+              <div v-if="get_message(message, index).type == 'tr'">{{ get_message(message, index).text }}</div>
               <a-button
                 v-if="get_message(message, index).type == 'transaction'"
                 @click="sendTransaction(get_message(message, index).transaction)"
