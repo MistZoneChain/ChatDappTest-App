@@ -12,11 +12,17 @@ function getType(content: string, that: any) {
     }
     if (content.substring(0, 3) == 't::') {
       const [_, contractAddress, functionName, value, types, args, text] = content.split('::');
-      let typeList = [types];
+      let typeList:Array<string> = []
+      if(types.length>0){
+        typeList = [types]
+      }
       if (types.indexOf(',') != -1) {
         typeList = types.split(',');
       }
-      let argList = [args];
+      let argList:Array<string> = []
+      if(types.length>0){
+        argList = [args]
+      }
       if (args.indexOf(',') != -1) {
         argList = args.split(',');
       }
