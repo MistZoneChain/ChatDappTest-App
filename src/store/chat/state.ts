@@ -18,7 +18,6 @@ export enum SendMessageStatus {
 
 export interface SendMessage extends BlockChatUpgradeModel.MessageCreatedEvent {
   status: SendMessageStatus;
-  hash?: string;
 }
 
 export interface Recipient {

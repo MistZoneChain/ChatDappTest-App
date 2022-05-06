@@ -46,6 +46,7 @@
               @click="changeContent(message, index)"
               v-if="show_swap(message, index) && message.sender == appSync.userAddress"
             />
+            <a-icon type="history" v-if="message.sender == appSync.userAddress" @click="utils.go.tx(appSync.ether.chainId, message.hash)" />
 
             <div class="message-content-text">
               <a v-if="get_message(message, index).type == 'url'" :href="get_message(message, index).href" target="_blank"
@@ -75,6 +76,7 @@
               <audio v-if="get_message(message, index).type == 'audio'" controls :src="get_message(message, index).src" />
             </div>
 
+            <a-icon type="history" v-if="message.sender != appSync.userAddress" @click="utils.go.tx(appSync.ether.chainId, message.hash)" />
             <a-icon
               type="swap"
               @click="changeContent(message, index)"
@@ -250,19 +252,19 @@ export default class MyMessage extends Vue {
       return {
         type: 'loading',
         class: 'loading2-icon',
-        text: message.hash ? utils.format.string2(message.hash, 6) : '',
+        text: message.hash == '' ? utils.format.string2(message.hash, 6) : '',
       };
     } else if (message.status == SendMessageStatus.error) {
       return {
         type: 'exclamation-circle',
         class: 'error-icon',
-        text: message.hash ? utils.format.string2(message.hash, 6) : '',
+        text: message.hash == '' ? utils.format.string2(message.hash, 6) : '',
       };
     } else if (message.status == SendMessageStatus.success) {
       return {
         type: 'check-circle',
         class: 'check-icon',
-        text: message.hash ? utils.format.string2(message.hash, 6) : '',
+        text: message.hash == '' ? utils.format.string2(message.hash, 6) : '',
       };
     }
   }

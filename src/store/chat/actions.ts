@@ -164,6 +164,7 @@ const actions: ActionTree<ChatState, RootState> = {
       }
     }
     const sendMessage: SendMessage = {
+      hash: '',
       sender: rootState.app.sync.userAddress,
       status: SendMessageStatus.prePending,
       recipientHash: state.async.recipientMap[recipientText].recipientHash,
@@ -176,6 +177,7 @@ const actions: ActionTree<ChatState, RootState> = {
       await rootState.app.sync.ether.blockchat.createMessage(
         sendMessage.recipientHash,
         sendMessage.content,
+        false,
         {},
         (transaction: ContractTransaction | ContractReceipt) => {
           if ('hash' in transaction) {
