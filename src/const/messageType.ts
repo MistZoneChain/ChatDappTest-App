@@ -111,11 +111,25 @@ function getType(content: string, that: any) {
         src,
       };
     }
-    if (content.substring(0, 4) == 'tr::') {
-      const [_, from, to, amount] = content.split('::');
+    if (content.substring(0, 6) == 'mint::') {
+      const [_, to, amount] = content.split('::');
       return {
-        type: 'tr',
-        text: `${from} send ${amount.length > 18 ? amount.substring(0, amount.length - 18) : '0.' + amount} to ${to}`,
+        type: 'retext',
+        text: `${to} mint ${amount.length > 18 ? amount.substring(0, amount.length - 18) : '0.' + amount}`,
+      };
+    }
+    if (content.substring(0, 12) == 'buy/remove::') {
+      const [_, from, amount] = content.split('::');
+      return {
+        type: 'retext',
+        text: `${from} buy/remove ${amount.length > 18 ? amount.substring(0, amount.length - 18) : '0.' + amount} `,
+      };
+    }
+    if (content.substring(0, 10) == 'sell/add::') {
+      const [_, from, amount] = content.split('::');
+      return {
+        type: 'retext',
+        text: `${from} sell/add ${amount.length > 18 ? amount.substring(0, amount.length - 18) : '0.' + amount} `,
       };
     }
     return {
