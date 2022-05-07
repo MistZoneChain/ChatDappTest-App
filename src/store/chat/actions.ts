@@ -1,6 +1,6 @@
 import { ActionTree } from 'vuex';
 import { RootState, ChatState } from '../index';
-import { log, utils } from '@/const';
+import { log, retry, utils } from '@/const';
 import Vue from 'vue';
 import { BlockChatUpgradeModel } from 'blockchat-contract-sdk';
 import { Recipient, SendMessage, SendMessageStatus } from '.';
@@ -124,11 +124,12 @@ const actions: ActionTree<ChatState, RootState> = {
       state.async.recipientMap[recipientText].messageBlockList.forEach(async (messageBlock) => {
         try {
           if (state.async.blockSkip) {
-            const messageCreatedEventList = await rootState.app.sync.ether.blockchat.getMessageCreatedEventList(
+            const messageCreatedEventList: Array<BlockChatUpgradeModel.MessageCreatedEvent> = await retry(rootState.app.sync.ether.blockchat.getMessageCreatedEventList.bind(rootState.app.sync.ether.blockchat), 3, [
               undefined,
               `${state.async.recipientMap[recipientText].recipientHash}000000000000000000000000`,
               messageBlock,
               messageBlock + state.async.blockSkip
+            ]
             );
             Vue.set(state.async.messageCreatedEventListMap[recipientText], messageBlock, messageCreatedEventList);
             messageCreatedEventList.forEach(async (messageCreatedEvent) => {
