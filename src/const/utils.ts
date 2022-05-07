@@ -45,10 +45,10 @@ export async function retry(func: Function, time: number, args?: Array<any>, cal
       await callback(res);
     }
     return res;
-  } catch (error) {
+  } catch (error:any) {
     time--;
     if (time > 0) {
-      log(`retry ${time}, ${error}`);
+      log(`retry ${time}, ${error.toString()}`);
       return await retry(func, time, args, callback);
     } else {
       throw error;
