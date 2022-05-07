@@ -219,7 +219,11 @@ export default class MyMessage extends Vue {
 
   get_message_header_text() {
     try {
-      return `${this.appStorage.activeRecipientText}`;
+      let length = 0;
+      Object.keys(this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText]).forEach((messageBlock) => {
+        length += this.chatAsync.messageCreatedEventListMap[this.appStorage.activeRecipientText][parseInt(messageBlock)].length;
+      })
+      return `${this.appStorage.activeRecipientText} 消息：${length} `;
     } catch (error) {
       return '';
     }
