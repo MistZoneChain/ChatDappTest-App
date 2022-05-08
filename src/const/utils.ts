@@ -49,6 +49,7 @@ export async function retry(func: Function, time: number, args?: Array<any>, cal
     time--;
     if (time > 0) {
       log(`retry ${time}, ${error.toString()}`);
+      await sleep(1000);
       return await retry(func, time, args, callback);
     } else {
       throw error;
