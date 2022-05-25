@@ -14,33 +14,26 @@ export class Ether {
   public provider: Web3Provider | JsonRpcProvider | undefined;
   public blockchat = new EtherBlockChatUpgradeableClient();
 
-  constructor() {}
+  constructor() { }
 
   async load() {
-    let provider: any = await detectEthereumProvider();
-    if (provider) {
-      if (provider != window.ethereum) {
-        throw new Error('Have you installed multiple wallets');
-      } else {
-        this._ethereum = window.ethereum;
-        if (this._ethereum) {
-          this._ethereum.on('accountsChanged', () => {
-            window.location.reload();
-          });
-          this._ethereum.on('chainChanged', () => {
-            window.location.reload();
-          });
-          try {
-            await this._ethereum.request({ method: 'eth_requestAccounts' });
-          } catch (error) {
-            throw new Error('Connection refused');
-          }
-        }
-        this.provider = new ethers.providers.Web3Provider(this._ethereum);
-        this.singer = this.provider.getSigner();
-        await this.setContracts();
-        this.chainId = await this.singer.getChainId();
+    this._ethereum = await detectEthereumProvider();
+    if (this._ethereum) {
+      this._ethereum.on('accountsChanged', () => {
+        window.location.reload();
+      });
+      this._ethereum.on('chainChanged', () => {
+        window.location.reload();
+      });
+      try {
+        await this._ethereum.request({ method: 'eth_requestAccounts' });
+      } catch (error) {
+        throw new Error('Connection refused');
       }
+      this.provider = new ethers.providers.Web3Provider(this._ethereum);
+      this.singer = this.provider.getSigner();
+      await this.setContracts();
+      this.chainId = await this.singer.getChainId();
     } else {
       log('Please use a browser that supports web3 to open');
       this.provider = new ethers.providers.JsonRpcProvider(COMMON.CHAIN[this._defaultChainId].NODE_URL);
