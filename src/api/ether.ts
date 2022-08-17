@@ -8,13 +8,13 @@ import * as sigUtil from '@metamask/eth-sig-util';
 
 export class Ether {
   private _ethereum: any;
-  private _defaultChainId = 56;
+  private _defaultChainId = 20220813;
   public singer: Signer | undefined;
   public chainId: number | undefined;
   public provider: Web3Provider | JsonRpcProvider | undefined;
   public blockchat = new EtherBlockChatUpgradeableClient();
 
-  constructor() { }
+  constructor() {}
 
   async load() {
     this._ethereum = await detectEthereumProvider();
@@ -45,25 +45,20 @@ export class Ether {
   async setContracts() {
     if (this.singer) {
       try {
-        await this.blockchat.connect(this.singer, undefined, 1);
+        await this.blockchat.connect(this.singer, '0x9677848eE19eAec186C2Ac6dE17874082b0d6895', 1);
       } catch (error) {
         if (this._ethereum) {
           this._ethereum.request({
-            method: 'wallet_addEthereumChain', // Metamask的api名称
+            method: 'wallet_addEthereumChain',
             params: [
               {
-                chainId: '0x38', // 网络id，16进制的字符串
-                chainName: 'Binance Smart Chain Mainnet', // 添加到钱包后显示的网络名称
-                rpcUrls: [
-                  'https://bsc-dataseed1.binance.org/', // rpc地址
-                ],
-                blockExplorerUrls: [
-                  'https://bscscan.com/', // 网络对应的区块浏览器
-                ],
+                chainId: '0x1348b8d',
+                chainName: 'MistZone Chain Testnet',
+                rpcUrls: ['https://mzc-testnet.seaeye.cn/'],
+                blockExplorerUrls: ['https://mzcscan-testnet.seaeye.cn/'],
                 nativeCurrency: {
-                  // 网络主币的信息
-                  name: 'BNB',
-                  symbol: 'BNB',
+                  name: 'MistZone Chain Native Token',
+                  symbol: 'MZT',
                   decimals: 18,
                 },
               },
@@ -74,7 +69,7 @@ export class Ether {
         }
       }
     } else if (this.provider) {
-      await this.blockchat.connect(this.provider, undefined, 1);
+      await this.blockchat.connect(this.provider, '0x9677848eE19eAec186C2Ac6dE17874082b0d6895', 1);
     } else {
       throw new Error('no singer or provider');
     }

@@ -40,8 +40,8 @@ export interface AppState {
 
 const appState: AppState = {
   storage: {
-    activeRecipientText: 'blockchat',
-    recipientTextList: ['blockchat', 'eth', 'bsc'],
+    activeRecipientText: 'global',
+    recipientTextList: ['global', 'mzc'],
     background: COMMON.BACKGROUND_LIST[0].URL,
     decimalLimit: 5,
     messageBlockLimit: 10,
